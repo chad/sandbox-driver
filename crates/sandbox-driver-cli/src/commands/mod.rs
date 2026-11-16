@@ -1,348 +1,210 @@
 mod exec;
-mod fs;
-mod lifecycle;
-mod shell;
+mod files;
 mod spec;
 
-use std::sync::Arc;
-
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::{
-    Capability, EventContext, ProviderKind, Sandbox, SandboxFilter, SandboxId, SandboxProvider,
-    WaitOptions, wait_for_stable_state,
+use sandbox_driver::SandboxId;
+use sandbox_driver::contract::{
+    Expose, LabelFilter, ProviderEntry, ProviderName, Sandbox, SandboxRef, Sandboxes,
+    parse_duration_ms,
 };
+use tokio::signal::ctrl_c;
 
-use self::exec::{execute_command, execute_run};
-use self::fs::execute_fs;
-use self::lifecycle::{LifecycleAction, lifecycle_action};
-use self::shell::execute_shell;
-use self::spec::{build_spec, parse_assignments};
-use crate::cli::{Cli, Command, EventFormat, OutputFormat, ProviderCommand, SandboxCommand};
-use crate::config::Config;
+use crate::cli::{Command, CreateArgs, OutputFormat, ProviderCommand};
 use crate::output::{
-    ProviderListing, event_context, health_exit_code, write_action, write_capabilities,
-    write_health, write_provider_list, write_status, write_statuses,
+    display_ref, write_action, write_descriptor, write_environments, write_exposure, write_found,
+    write_health, write_line, write_providers, write_status, write_stderr,
 };
-use crate::provider::{BUILTIN_PROVIDERS, ProviderSession};
 
-const DRIVER_ERROR_EXIT: u8 = 125;
-const TIMEOUT_EXIT: u8 = 124;
-const CANCELLED_EXIT: u8 = 130;
-const KILLED_EXIT: u8 = 137;
-
-pub(crate) async fn execute(cli: &Cli, config: &Config) -> Result<u8> {
-    let selected = config.selected_provider(cli.provider.as_deref());
-    match &cli.command {
-        Command::Provider { command } => {
-            execute_provider(command, config, selected, cli.output).await
-        }
-        Command::Sandbox { command } => {
-            with_provider(selected, config, async |provider| {
-                execute_sandbox(command, provider, cli.output, cli.events).await
-            })
-            .await
-        }
-    }
-}
-
-/// Connects the selected provider for the duration of `body`, then shuts it
-/// down. `provider list` never reaches this: it reads configuration only.
-async fn with_provider(
-    selected: &str,
-    config: &Config,
-    body: impl AsyncFnOnce(&dyn SandboxProvider) -> Result<u8>,
-) -> Result<u8> {
-    let session = ProviderSession::connect(selected, config).await?;
-    let command_result = execute_connected(&session.provider, body).await;
-    let shutdown_result = session.shutdown().await;
-    match (command_result, shutdown_result) {
-        (Ok(code), Ok(())) => Ok(code),
-        (Ok(_), Err(error)) | (Err(error), Ok(())) => Err(error),
-        (Err(error), Err(shutdown_error)) => Err(error.context(format!(
-            "the command also failed to shut down its plugin: {shutdown_error:#}"
-        ))),
-    }
-}
-
-#[tracing::instrument(
-    name = "execute",
-    skip_all,
-    fields(provider_kind = %provider.kind()),
-    err
-)]
-async fn execute_connected(
-    provider: &dyn SandboxProvider,
-    body: impl AsyncFnOnce(&dyn SandboxProvider) -> Result<u8>,
-) -> Result<u8> {
-    body(provider).await
-}
-
-async fn execute_provider(
-    command: &ProviderCommand,
-    config: &Config,
-    selected: &str,
+/// Runs one command against an open catalog. `providers` is the entry
+/// configuration, which the catalog itself does not hand back.
+pub(crate) async fn execute(
+    command: &Command,
+    catalog: &Sandboxes,
+    providers: &[(ProviderName, ProviderEntry)],
     output: OutputFormat,
 ) -> Result<u8> {
     match command {
-        ProviderCommand::List => {
-            list_providers(config, selected, output).await?;
+        Command::Providers => {
+            write_providers(providers, output).await?;
             Ok(0)
         }
-        ProviderCommand::Health => {
-            with_provider(selected, config, async |provider| {
-                let health = provider.health().await?;
-                write_health(provider.kind().as_str(), &health, output).await?;
-                Ok(health_exit_code(&health))
-            })
-            .await
+        Command::Provider { command } => provider(catalog, command, output).await,
+        Command::Environments => {
+            let mut environments = Vec::new();
+            for name in catalog.environments().await? {
+                let environment = catalog.environment(name.as_str()).await?;
+                environments.push((name, environment));
+            }
+            write_environments(&environments, output).await?;
+            Ok(0)
         }
-        ProviderCommand::Capabilities => {
-            with_provider(selected, config, async |provider| {
-                write_capabilities(provider.kind().as_str(), provider.capabilities(), output)
-                    .await?;
-                Ok(0)
-            })
-            .await
+        Command::Create(args) => create(catalog, args, output).await,
+        Command::Run(args) => {
+            require_raw_output(output, "run")?;
+            exec::run(catalog, args).await
         }
-    }
-}
-
-async fn list_providers(config: &Config, selected: &str, format: OutputFormat) -> Result<()> {
-    let mut listings = Vec::new();
-    for name in BUILTIN_PROVIDERS.iter().copied() {
-        if !config.providers.contains_key(name) {
-            listings.push(ProviderListing {
-                name,
-                provider_type: name,
-                kind: name,
-                selected: name == selected,
-            });
+        Command::Find(args) => {
+            let filter = LabelFilter(spec::parse_assignments(&args.labels, "label")?);
+            write_found(&catalog.find(filter).await?, output).await?;
+            Ok(0)
         }
-    }
-    for (name, profile) in &config.providers {
-        listings.push(ProviderListing {
-            name,
-            provider_type: profile.provider_type(),
-            kind: profile.provider_kind(),
-            selected: name == selected,
-        });
-    }
-    listings.sort_by(|left, right| left.name.cmp(right.name));
-    write_provider_list(&listings, format).await
-}
-
-async fn execute_sandbox(
-    command: &SandboxCommand,
-    provider: &dyn SandboxProvider,
-    output: OutputFormat,
-    events: EventFormat,
-) -> Result<u8> {
-    if is_host(provider.kind()) && !matches!(command, SandboxCommand::Run(_)) {
-        bail!(
-            "Host sandbox handles do not survive CLI process exit; use `lithos-sandbox --provider host sandbox run`"
-        );
-    }
-    let event_context = event_context(events);
-    match command {
-        SandboxCommand::Create(args) => {
-            let spec = build_spec(&args.spec, provider.kind()).await?;
-            let sandbox = provider.create(&spec, event_context).await?;
-            let status = if args.wait {
-                wait_for_stable_state(sandbox.as_ref(), &WaitOptions::default()).await?
-            } else {
-                sandbox.describe().await?
-            };
+        Command::Status(args) => {
+            let reference = resolve_ref(catalog, &args.sandbox).await?;
+            let status = attach(catalog, &reference).await?.status().await?;
             write_status(&status, output).await?;
             Ok(0)
         }
-        SandboxCommand::Run(args) => {
-            require_raw_output(output, "sandbox run")?;
-            execute_run(args, provider, event_context).await
-        }
-        SandboxCommand::List(args) => {
-            let mut filter = SandboxFilter::default();
-            filter.labels = parse_assignments(&args.labels, "label")?;
-            let statuses = provider.list(&filter).await?;
-            write_statuses(&statuses, output).await?;
+        Command::Start(args) => {
+            let reference = resolve_ref(catalog, &args.sandbox).await?;
+            attach(catalog, &reference).await?.start().await?;
+            write_action(&reference, "started", output).await?;
             Ok(0)
         }
-        SandboxCommand::Inspect(args) => {
-            let sandbox = attach(provider, &args.id, event_context).await?;
-            write_status(&sandbox.describe().await?, output).await?;
+        Command::Stop(args) => {
+            let reference = resolve_ref(catalog, &args.sandbox).await?;
+            attach(catalog, &reference).await?.stop().await?;
+            write_action(&reference, "stopped", output).await?;
             Ok(0)
         }
-        SandboxCommand::Start(args) => {
-            lifecycle_action(
-                provider,
-                args,
-                event_context,
-                output,
-                LifecycleAction::Start,
-            )
-            .await
+        Command::Exec(args) => {
+            require_raw_output(output, "exec")?;
+            let reference = resolve_ref(catalog, &args.sandbox).await?;
+            let sandbox = attach(catalog, &reference).await?;
+            exec::execute(sandbox.as_ref(), &args.options, &args.command).await
         }
-        SandboxCommand::Stop(args) => {
-            lifecycle_action(provider, args, event_context, output, LifecycleAction::Stop).await
+        Command::Shell(args) => {
+            require_raw_output(output, "shell")?;
+            let reference = resolve_ref(catalog, &args.sandbox).await?;
+            exec::shell(attach(catalog, &reference).await?.as_ref()).await
         }
-        SandboxCommand::Pause(args) => {
-            lifecycle_action(
-                provider,
-                args,
-                event_context,
-                output,
-                LifecycleAction::Pause,
-            )
-            .await
-        }
-        SandboxCommand::Resume(args) => {
-            lifecycle_action(
-                provider,
-                args,
-                event_context,
-                output,
-                LifecycleAction::Resume,
-            )
-            .await
-        }
-        SandboxCommand::Archive(args) => {
-            lifecycle_action(
-                provider,
-                args,
-                event_context,
-                output,
-                LifecycleAction::Archive,
-            )
-            .await
-        }
-        SandboxCommand::Recover(args) => {
-            lifecycle_action(
-                provider,
-                args,
-                event_context,
-                output,
-                LifecycleAction::Recover,
-            )
-            .await
-        }
-        SandboxCommand::RefreshActivity(args) => {
-            act_on_sandbox(
-                provider,
-                &args.id,
-                event_context,
-                output,
-                Capability::LifecycleRefreshActivity,
-                "refreshed activity for",
-                async |sandbox| sandbox.refresh_activity().await,
-            )
-            .await
-        }
-        SandboxCommand::Undelete(args) => {
-            require_provider_capability(provider, Capability::LifecycleUndelete)?;
-            let id = parse_sandbox_id(&args.id)?;
-            let sandbox = provider.undelete(&id, event_context).await?;
-            write_status(&sandbox.describe().await?, output).await?;
+        Command::Cp(args) => files::cp(catalog, args, output).await,
+        Command::Ls(args) => files::ls(catalog, args, output).await,
+        Command::Expose(args) => {
+            let reference = resolve_ref(catalog, &args.sandbox).await?;
+            let sandbox = attach(catalog, &reference).await?;
+            let ttl_ms = args
+                .ttl
+                .as_deref()
+                .map(|ttl| {
+                    parse_duration_ms(ttl)
+                        .ok()
+                        .context("--ttl needs a duration with a unit, such as 1h")
+                })
+                .transpose()?;
+            let exposure = sandbox
+                .ports()
+                .expose(args.port, Expose {
+                    signed: args.signed,
+                    ttl_ms,
+                })
+                .await?;
+            write_exposure(&exposure, output).await?;
+            // Some providers serve the exposure from this process, so it
+            // lasts as long as the command does.
+            write_stderr(b"exposed; press Ctrl-C to release\n").await?;
+            ctrl_c().await.context("listening for Ctrl-C")?;
+            sandbox.ports().release(args.port).await?;
             Ok(0)
         }
-        SandboxCommand::Delete(args) => {
-            // By id, with no attach: a sandbox no handle can be built for is
-            // still removed, and an unknown id is already gone.
-            let id = parse_sandbox_id(&args.id)?;
-            provider
-                .delete(&id, event_context)
+        Command::Destroy(args) => {
+            let reference = resolve_ref(catalog, &args.sandbox).await?;
+            catalog
+                .destroy(&reference)
                 .await
-                .with_context(|| format!("deleting sandbox {:?}", args.id))?;
-            write_action(provider.kind().as_str(), id.as_str(), "deleted", output).await?;
+                .with_context(|| format!("destroying sandbox {}", display_ref(&reference)))?;
+            write_action(&reference, "destroyed", output).await?;
             Ok(0)
-        }
-        SandboxCommand::Exec(args) => {
-            require_raw_output(output, "sandbox exec")?;
-            let sandbox = attach(provider, &args.id, event_context).await?;
-            execute_command(sandbox.as_ref(), &args.options, &args.command).await
-        }
-        SandboxCommand::Shell(args) => {
-            require_raw_output(output, "sandbox shell")?;
-            let sandbox = attach(provider, &args.id, event_context).await?;
-            sandbox_driver::activate(sandbox.as_ref(), &WaitOptions::default()).await?;
-            execute_shell(sandbox.as_ref()).await
-        }
-        SandboxCommand::Fs { command } => {
-            execute_fs(command, provider, event_context, output).await
         }
     }
 }
 
-async fn attach(
-    provider: &dyn SandboxProvider,
-    id: &str,
-    events: Option<EventContext>,
-) -> Result<Arc<dyn Sandbox>> {
-    provider
-        .attach(&parse_sandbox_id(id)?, events)
-        .await
-        .with_context(|| format!("attaching sandbox {id:?}"))
-}
-
-fn parse_sandbox_id(id: &str) -> Result<SandboxId> {
-    SandboxId::try_new(id.to_owned()).context("validating sandbox ID")
-}
-
-/// Host handles live only as long as the CLI process, so most sandbox
-/// commands are refused for it.
-fn is_host(kind: &ProviderKind) -> bool {
-    kind.as_str() == "host"
-}
-
-/// Attaches `id`, requires `capability`, runs `act`, and reports `verb`.
-async fn act_on_sandbox(
-    provider: &dyn SandboxProvider,
-    id: &str,
-    events: Option<EventContext>,
+async fn provider(
+    catalog: &Sandboxes,
+    command: &ProviderCommand,
     output: OutputFormat,
-    capability: Capability,
-    verb: &str,
-    act: impl AsyncFnOnce(&dyn Sandbox) -> sandbox_driver::Result<()>,
 ) -> Result<u8> {
-    let sandbox = attach(provider, id, events).await?;
-    require_capability(provider, sandbox.as_ref(), capability)?;
-    act(sandbox.as_ref()).await?;
-    write_action(
-        provider.kind().as_str(),
-        sandbox.id().as_str(),
-        verb,
-        output,
-    )
-    .await?;
+    match command {
+        ProviderCommand::Describe(args) => {
+            let descriptor = catalog.provider(&args.name)?.describe().await?;
+            write_descriptor(&args.name, &descriptor, output).await?;
+            Ok(0)
+        }
+        ProviderCommand::Health(args) => {
+            let health = catalog.provider(&args.name)?.health().await?;
+            write_health(&args.name, &health, output).await?;
+            Ok(u8::from(!health.healthy))
+        }
+    }
+}
+
+async fn create(catalog: &Sandboxes, args: &CreateArgs, output: OutputFormat) -> Result<u8> {
+    let builder = catalog.builder(&args.environment).await?;
+    let builder = spec::apply(builder, args).await?;
+    let entry = catalog.environment(&args.environment).await?.provider;
+    require_outlives_command(catalog, entry.as_str(), "create").await?;
+    let sandbox = builder
+        .create()
+        .await
+        .with_context(|| format!("creating a sandbox from environment {}", args.environment))?;
+    let reference = sandbox.reference();
+    match output {
+        OutputFormat::Json => write_status(&sandbox.status().await?, output).await?,
+        OutputFormat::Table | OutputFormat::Id => write_line(&display_ref(&reference)).await?,
+    }
     Ok(0)
 }
 
-fn require_provider_capability(
-    provider: &dyn SandboxProvider,
-    capability: Capability,
-) -> Result<()> {
-    if !provider.capabilities().supports(capability) {
-        bail!("provider {} does not support {capability}", provider.kind());
+/// Refuses an operation whose sandbox would be gone when this command
+/// exits: a provider of `process` durability ends its sandboxes with the
+/// process that made them.
+async fn require_outlives_command(catalog: &Sandboxes, entry: &str, what: &str) -> Result<()> {
+    let descriptor = catalog.provider(entry)?.describe().await?;
+    if !exec::outlives_command(descriptor.durability) {
+        bail!(
+            "sandboxes of provider {entry} end when this command exits, so {what} would leave \
+             nothing behind; use `lithos-sandbox run` without --keep"
+        );
     }
     Ok(())
 }
 
-fn require_capability(
-    provider: &dyn SandboxProvider,
-    sandbox: &dyn Sandbox,
-    capability: Capability,
-) -> Result<()> {
-    if !sandbox.capabilities().supports(capability) {
-        bail!(
-            "provider {} does not support {capability} for sandbox {}",
-            provider.kind(),
-            sandbox.id()
-        );
+/// Reads a sandbox ref: `<entry>/<id>` as `create` prints it, or the JSON
+/// reference from `--output json`. The short form takes its namespace from
+/// the entry's provider now; the JSON form is checked against it.
+pub(super) async fn resolve_ref(catalog: &Sandboxes, text: &str) -> Result<SandboxRef> {
+    if text.trim_start().starts_with('{') {
+        return serde_json::from_str(text).context("parsing the sandbox reference as JSON");
     }
-    Ok(())
+    let (entry, id) = text
+        .split_once('/')
+        .filter(|(entry, id)| !entry.is_empty() && !id.is_empty())
+        .with_context(|| {
+            format!("{text:?} is not a sandbox ref; expected <provider>/<id>, as `create` prints")
+        })?;
+    let provider = ProviderName::try_new(entry).context("reading the sandbox ref")?;
+    let id = SandboxId::try_new(id).context("reading the sandbox ref")?;
+    let namespace = catalog.provider(entry)?.describe().await?.namespace.id;
+    Ok(SandboxRef {
+        provider,
+        namespace,
+        id,
+    })
+}
+
+pub(super) async fn attach(
+    catalog: &Sandboxes,
+    reference: &SandboxRef,
+) -> Result<Box<dyn Sandbox>> {
+    catalog
+        .attach(reference)
+        .await
+        .with_context(|| format!("attaching sandbox {}", display_ref(reference)))
 }
 
 fn require_raw_output(output: OutputFormat, command: &str) -> Result<()> {
     if output != OutputFormat::Table {
-        bail!("{command} streams raw output and requires --output table");
+        bail!("{command} streams the command's own output and requires --output table");
     }
     Ok(())
 }
