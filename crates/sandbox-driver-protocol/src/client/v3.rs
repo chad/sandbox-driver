@@ -275,7 +275,6 @@ impl Generation {
 /// The optional capability groups this adapter does not yet carry are
 /// reported as absent, matching the handles' `None` accessors.
 fn masked(mut descriptor: Descriptor) -> Descriptor {
-    descriptor.capabilities.lifecycle.clear();
     descriptor.capabilities.endpoints.clear();
     descriptor.capabilities.containers = false;
     descriptor

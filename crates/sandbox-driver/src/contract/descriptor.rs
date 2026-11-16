@@ -130,7 +130,6 @@ pub enum PortSupport {
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CapabilitySet {
-    pub lifecycle:        BTreeSet<LifecycleCapability>,
     pub endpoints:        BTreeSet<EndpointCapability>,
     pub services:         bool,
     /// One-shot containers in the workload's workspace/network.
@@ -140,15 +139,6 @@ pub struct CapabilitySet {
     /// Timers the provider enforces. A request for any other timer is
     /// `Unsupported`, never silently ignored.
     pub timers:           BTreeSet<TimerCapability>,
-}
-
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum LifecycleCapability {
-    Pause,
-    Resume,
-    Archive,
-    Recover,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]

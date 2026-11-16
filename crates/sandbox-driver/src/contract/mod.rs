@@ -25,8 +25,8 @@ pub use catalog::{
 pub use config::{Environment, EnvironmentSource, PluginTrust, ProviderEntry};
 pub use descriptor::{
     AccessScope, CapabilitySet, ContainerField, Descriptor, Durability, EndpointCapability,
-    JsonSchema, LifecycleCapability, Locality, Namespace, NamespaceScope, NetworkMode, PortSupport,
-    ProviderSchemas, ResourceCapability, SourceKind, TimerCapability,
+    JsonSchema, Locality, Namespace, NamespaceScope, NetworkMode, PortSupport, ProviderSchemas,
+    ResourceCapability, SourceKind, TimerCapability,
 };
 pub use error::{Error, MutationOutcome, RemainingResource};
 pub use execution::{
@@ -35,9 +35,8 @@ pub use execution::{
 pub use identity::SandboxRef;
 pub use runtime::{
     Activation, ByteStream, Containers, Endpoints, Expose, Exposure, FileEntry, FileRange, Files,
-    Health, LabelFilter, Lifecycle, OneShotImage, OneShotSpec, PluginLocation, Ports,
-    ProviderFactory, ProviderRuntime, Sandbox, SandboxSummary, SecretResolver, SecretValues,
-    WorkloadAdmission,
+    Health, LabelFilter, OneShotImage, OneShotSpec, PluginLocation, Ports, ProviderFactory,
+    ProviderRuntime, Sandbox, SandboxSummary, SecretResolver, SecretValues, WorkloadAdmission,
 };
 pub use status::{SandboxState, ServiceAddress, Status};
 pub use units::{ParseUnitError, parse_duration_ms, parse_size_mib};

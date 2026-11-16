@@ -217,7 +217,7 @@ async fn refusals_and_descriptor_facts_cross_the_process_boundary() {
             .await,
         "ports.signed",
     );
-    assert!(sandbox.lifecycle().is_none() && sandbox.endpoints().is_none());
+    assert!(sandbox.endpoints().is_none());
     assert!(sandbox.containers().is_none());
     catalog
         .destroy(&sandbox.reference())

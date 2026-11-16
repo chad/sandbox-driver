@@ -156,12 +156,11 @@ pub trait Sandbox: Send + Sync {
     fn working_directory(&self) -> &Path;
     fn env(&self) -> &BTreeMap<String, String>;      // the sandbox's ambient variables
     async fn status(&self) -> Result<Status, Error>;
-    async fn start(&self) -> Result<(), Error>;
+    async fn start(&self) -> Result<(), Error>;      // also brings a paused sandbox back
     async fn stop(&self) -> Result<(), Error>;
     async fn exec(&self, spec: ExecSpec, controls: ExecControls) -> Result<ExecOutcome, Error>;
     fn files(&self) -> &dyn Files;                   // get, put, list; stat/rm/mv/mkdir derived over exec
     fn ports(&self) -> &dyn Ports;                   // expose, release
-    fn lifecycle(&self) -> Option<&dyn Lifecycle>;   // optional capability: pause, resume, archive, recover
     fn endpoints(&self) -> Option<&dyn Endpoints>;   // optional capability: ssh, shell command, vnc
     fn containers(&self) -> Option<&dyn Containers>; // optional capability: run a one-shot container in this sandbox's world
 }
@@ -286,7 +285,7 @@ Host, Docker and Daytona are built in: the application registers each one, and t
 | Mounts host paths | yes | local daemon only | no |
 | Network policy | default only | allow all, block | allow all, block, CIDR list, domain list |
 | Resources | ignored | cpu, memory | cpu, memory, disk |
-| Optional capabilities | none | lifecycle (pause, resume), endpoints (shell command), services, containers | lifecycle (pause, resume on VMs), endpoints (ssh, vnc), services, containers |
+| Optional capabilities | none | endpoints (shell command), services, containers | endpoints (ssh, vnc), services, containers |
 
 Each of these facts comes from the provider's descriptor at runtime; the table summarizes them.
 
@@ -398,6 +397,8 @@ Three rules about what crosses the contract:
 - **Labels round-trip exactly.** Whatever keys and values the caller sets must come back unchanged from `status` and must match in `list` filters. If your backend cannot store a value as given, encode it reversibly; if it cannot store it at all, refuse with `invalid_spec` naming the label. Never truncate or drop one.
 - Unavailable is not lost. When you cannot reach a sandbox but do not know it to be gone, report state `unavailable` and fail commands with the `unavailable` error. The library does not infer deletion or replace the sandbox because contact was lost. Report a known lifecycle state only when it can be established. The caller decides how its application responds to the uncertainty.
 
+The contract has no pause, resume, archive or recover. When the backend paused or archived a sandbox, on its own timer or through another tool, `start` brings it back to running; status reports `paused` or `archived` until then. Docker unpauses the container, so its processes carry on; Daytona starts the sandbox, which also resumes a paused one.
+
 `stop` and `start` are a fence around the whole sandbox workload. Before draining execution, `stop(id)` blocks new exec and one-shot container admissions. It returns success only after workload commands, services, and one-shot containers have stopped and the workspace is intact. This includes execution admitted through another handle or provider instance. `start(id)` fails with `Busy` while a previous instance or stop is still draining; after stop then start, no execution from before the stop can remain. Providers coordinate this boundary across instances, or enforce one mutating owner and reject conflicting mutations with `Busy`. A timeout, lost connection, or unconfirmed cleanup is an error, never a successful fence.
 
 ### Workload lifecycle and uncertain outcomes
@@ -465,7 +466,7 @@ Connection loss, a plugin crash, or `Error::Stale` does not establish whether an
   "resources": ["cpu", "memory"],
   "network": ["allow_all"],
   "ports": {"exposable": "any"},
-  "capabilities": {"lifecycle": [], "endpoints": [], "services": false, "containers": false,
+  "capabilities": {"endpoints": [], "services": false, "containers": false,
                    "container_fields": [], "timers": ["auto_stop"]}
 }
 ```
@@ -478,14 +479,13 @@ Connection loss, a plugin crash, or `Error::Stale` does not establish whether an
 
 ### Optional capabilities
 
-Four groups of calls and fields that only some providers can offer. They are defined here, not by plugins: a provider declares which of them it implements in `capabilities`, and a client checks before relying on one. A plugin cannot add a fifth; features outside the contract are not reachable through the library, and a new group is added only when a second client and a second provider both need it.
+Three groups of calls and fields that only some providers can offer. They are defined here, not by plugins: a provider declares which of them it implements in `capabilities`, and a client checks before relying on one. A plugin cannot add a fourth; features outside the contract are not reachable through the library, and a new group is added only when a second client and a second provider both need it. Pause, resume, archive and recover were left out because no client calls them; they can return as a group when one does.
 
-- `lifecycle`: a list from `pause`, `resume`, `archive`, `recover`.
 - `endpoints`: a list from `ssh` (`ssh(ttl_ms)`, `ssh_revoke(token)`), `shell_command`, `vnc`.
 - `services`: `true` if `create` accepts the `services` and `container` fields of the spec.
 - `containers`: `true` if you implement `run(sandbox, image | build, entrypoint, args, env, cwd)`, a one-shot container sharing the workload workspace, network, and service reachability, streamed like exec. `image` is a registry reference. `build` names a context directory in the workload workspace, resolved against the sandbox working directory, so the Dockerfile can copy files beside it; it also takes an optional Dockerfile path within the context, the tag the build produces, which is its cache key, and whether an image already carrying that tag may run without a build. Both forms are part of the capability. Unlike exec, a one-shot runs the image's own command: `entrypoint`, when given, replaces the image's entrypoint, and non-empty `args` replace the image's command, so arguments alone reach the image's entrypoint, as a GitHub Docker action expects. Its execution participates in the sandbox stop fence and its resources are removed when it finishes or the sandbox is destroyed.
 
-Docker and Daytona implement all four. Host implements none: it runs commands as processes in a directory and has nothing to put a service in.
+Docker and Daytona implement all three. Host implements none: it runs commands as processes in a directory and has nothing to put a service in.
 
 ### Conformance
 
@@ -523,7 +523,7 @@ dev-dependency. It implements the required in-memory lifecycle, identity, files,
 and scripted streaming execution surface. Use `FakeProvider::script` to define
 command responses and `FakeProvider::sandboxes` to retain access to its call log.
 Unscripted commands fail; no command executes on the host. It advertises no
-optional services, container, endpoint, lifecycle-extension or port capabilities.
+optional services, container, endpoint or port capabilities.
 The common conformance checks run against it; optional workload and provider
 restart/failure scenarios remain integration gates, not claims made by the fake.
 

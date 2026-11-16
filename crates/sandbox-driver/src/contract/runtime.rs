@@ -11,8 +11,8 @@ use tokio::io::AsyncRead;
 
 use super::workload::{validate_env, validate_name};
 use super::{
-    Descriptor, Error, ExecControls, ExecOutcome, ExecSpec, LifecycleCapability, PluginTrust,
-    ProviderEntry, ProviderName, ProviderSchemas, SandboxRef, SandboxSpec, SandboxState, Status,
+    Descriptor, Error, ExecControls, ExecOutcome, ExecSpec, PluginTrust, ProviderEntry,
+    ProviderName, ProviderSchemas, SandboxRef, SandboxSpec, SandboxState, Status,
 };
 use crate::redact::EnvKeys;
 use crate::{FileKind, ProviderKind, SandboxId};
@@ -163,7 +163,8 @@ pub trait Sandbox: Send + Sync {
     fn env(&self) -> &BTreeMap<String, String>;
     async fn status(&self) -> Result<Status, Error>;
     /// Uses the frozen admission, rechecks readiness, and refuses while an old
-    /// generation is draining. Success means execution can be admitted.
+    /// generation is draining. Brings a sandbox the backend paused back to
+    /// running. Success means execution can be admitted.
     async fn start(&self) -> Result<(), Error>;
     /// Success confirms termination of every previously admitted execution,
     /// service and one-shot across all handles/instances. Preserves workspace.
@@ -171,9 +172,6 @@ pub trait Sandbox: Send + Sync {
     async fn exec(&self, spec: ExecSpec, controls: ExecControls) -> Result<ExecOutcome, Error>;
     fn files(&self) -> &dyn Files;
     fn ports(&self) -> &dyn Ports;
-    fn lifecycle(&self) -> Option<&dyn Lifecycle> {
-        None
-    }
     fn endpoints(&self) -> Option<&dyn Endpoints> {
         None
     }
@@ -234,11 +232,6 @@ impl fmt::Debug for Exposure {
 pub trait Ports: Send + Sync {
     async fn expose(&self, port: NonZeroU16, options: Expose) -> Result<Exposure, Error>;
     async fn release(&self, port: NonZeroU16) -> Result<(), Error>;
-}
-
-#[async_trait]
-pub trait Lifecycle: Send + Sync {
-    async fn apply(&self, action: LifecycleCapability) -> Result<(), Error>;
 }
 
 #[async_trait]

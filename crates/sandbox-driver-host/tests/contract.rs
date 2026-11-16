@@ -168,7 +168,7 @@ async fn host_advertises_an_owner_process_provider_and_refuses_what_it_cannot_do
             .await,
         "ports.signed",
     );
-    assert!(sandbox.lifecycle().is_none() && sandbox.endpoints().is_none());
+    assert!(sandbox.endpoints().is_none());
     assert!(sandbox.containers().is_none());
     catalog
         .destroy(&sandbox.reference())
