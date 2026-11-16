@@ -27,13 +27,13 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-**Status:** `Sandboxes` is the sandbox-driver API. It lives in the `contract`
-modules until it moves to the crate root. The examples run against the in-memory
+**Status:** `Sandboxes` is the sandbox-driver API, exported from the crate root.
+The examples run against the in-memory
 provider in `sandbox-driver-testing`. Host, Docker, and Daytona implement it as
 built-ins, and protocol version 3 loads third-party plugins. See the
 [API specification](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/next-api.md).
 
-The older crate-root provider API ([design](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md)),
+The older provider API ([design](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md)),
 protocol version 2, and the Host, Docker, and Daytona provider executables are
 still in the tree but are being removed. If you need them, pin tag
 [`v2`](https://github.com/lithoscomputer/sandbox-driver/tree/v2).
@@ -82,7 +82,7 @@ Host runs processes in a directory and provides no isolation boundary.
 
 | Crate | Use it when |
 | --- | --- |
-| `sandbox-driver` | Build against the `Sandboxes` API, in the `contract` module |
+| `sandbox-driver` | Build against the `Sandboxes` API |
 | `sandbox-driver-docker` | Embed the built-in Docker provider |
 | `sandbox-driver-daytona` | Embed the built-in Daytona provider |
 | `sandbox-driver-host` | Embed the built-in Host provider |
@@ -208,7 +208,7 @@ will use the environment catalog; those commands are not available yet.
 ## Status and compatibility
 
 - **Maturity:** Pre-1.0; the public API may change before 1.0.
-- **Implemented:** The catalog, schema validation, scripted fake, and common conformance suite are available under `contract` modules; Host, Docker, and Daytona provide built-in factories, and `PluginLoader` loads protocol 3 plugins.
+- **Implemented:** The catalog, schema validation, scripted fake, and common conformance suite are available at their crates' roots; Host, Docker, and Daytona provide built-in factories, and `PluginLoader` loads protocol 3 plugins.
 - **Conformance:** Host runs the shared conformance suite in the routine tests; Docker runs it with `mise run test:docker` and Daytona with `mise run test:live`.
 - **MSRV:** Rust 1.85, as declared in the workspace manifest.
 - **CI platforms:** macOS arm64, Linux x86_64, and Linux arm64.

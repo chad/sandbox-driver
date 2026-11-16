@@ -152,7 +152,7 @@ target/debug/lithos-sandbox --provider docker sandbox delete "$id"
 ## Shared contract runtime
 
 `sandbox_driver_docker::DockerFactory` registers Docker as a built-in with a
-`contract::Registry`. An entry's only `config` key is `host` (`unix://`,
+`sandbox_driver::Registry`. An entry's only `config` key is `host` (`unix://`,
 `tcp://` or `http://`; default `unix:///var/run/docker.sock`); nothing is read
 from the ambient environment. The runtime drives the same container plan,
 claims and stop fence described above, so legacy and new-contract clients

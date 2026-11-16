@@ -1,8 +1,11 @@
-//! Shared declarations for the next sandbox API.
+//! Core traits and types for driving sandboxes across providers.
 //!
-//! This module is additive: it does not change the existing crate-root traits,
-//! specs, errors, or protocol v2. Providers must explicitly implement the
-//! guarantees in `docs/shared-contract.md` before advertising this contract.
+//! [`Sandboxes`] is the catalog a program calls. It is built from provider
+//! entries and a [`Registry`] of [`ProviderFactory`] registrations. A factory
+//! activates one [`Provider`] per entry, and a provider creates, attaches,
+//! lists and destroys [`Sandbox`] handles.
+//!
+//! Providers must implement the guarantees in `docs/shared-contract.md`.
 //! Serialization here defines common data, not a negotiated wire protocol.
 
 mod admission;

@@ -1,4 +1,4 @@
-//! Reusable checks for the additive `sandbox_driver` API.
+//! Reusable conformance checks for `sandbox_driver` providers.
 //!
 //! This suite verifies the common lifecycle, routing, streaming, and file
 //! surface. Provider-specific workload targeting, optional services/containers,

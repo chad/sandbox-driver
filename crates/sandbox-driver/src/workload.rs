@@ -258,8 +258,9 @@ pub enum WorkspaceOwnership {
 }
 
 /// Portable workload declaration. This unvalidated DTO is deliberately
-/// separate from `crate::SandboxSpec`: legacy providers must not silently
-/// ignore services, container options, or the new workload-target semantics.
+/// separate from `crate::legacy::SandboxSpec`: legacy providers must not
+/// silently ignore services, container options, or the new workload-target
+/// semantics.
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SandboxSpec {

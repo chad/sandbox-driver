@@ -39,7 +39,7 @@ pub const FILES_LIST: &str = "files.list";
 pub const PORTS_EXPOSE: &str = "ports.expose";
 pub const PORTS_RELEASE: &str = "ports.release";
 
-/// Error reports whose `detail` is a serialized `contract::Error`.
+/// Error reports whose `detail` is a serialized `sandbox_driver::Error`.
 const CONTRACT_ERROR: &str = "contract";
 
 /// The configured entry's identity and connection settings. Secret values

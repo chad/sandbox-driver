@@ -1,4 +1,5 @@
-//! Plugin side of protocol version 3: serves a `contract::ProviderFactory`.
+//! Plugin side of protocol version 3: serves a
+//! `sandbox_driver::ProviderFactory`.
 //!
 //! `initialize` activates the plugin's own factory with the entry's config and
 //! the secrets named by the host, read from this process's environment. Every
