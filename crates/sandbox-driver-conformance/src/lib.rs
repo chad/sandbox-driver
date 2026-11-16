@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use sandbox_driver::{
     AccessScope, Error, ExecControls, ExecSpec, FileRange, LabelFilter, MutationOutcome,
-    OutputSink, Sandbox, SandboxRef, SandboxState, Sandboxes, Termination,
+    OutputSink, Sandbox, SandboxRef, SandboxState, Sandboxes, Termination, run_shell,
 };
 use tokio::io::AsyncReadExt;
 use tokio::sync::mpsc;
@@ -49,6 +49,7 @@ pub struct Conformance {
     peer:        Option<Sandboxes>,
     environment: String,
     commands:    Commands,
+    shell:       bool,
     pub timeout: Duration,
 }
 
@@ -57,6 +58,7 @@ enum Scenario<'a> {
     Identity,
     Files,
     Exec,
+    Shell,
     /// Stops the sandbox through a handle attached from this catalog.
     Fence(&'a Sandboxes),
 }
@@ -74,6 +76,7 @@ impl Conformance {
             peer: None,
             environment: environment.into(),
             commands,
+            shell: false,
             timeout: Duration::from_secs(30),
         }
     }
@@ -82,6 +85,15 @@ impl Conformance {
     #[must_use]
     pub fn with_peer(mut self, peer: Sandboxes) -> Self {
         self.peer = Some(peer);
+        self
+    }
+
+    /// Declares that the environment's workload provides POSIX `sh`, which
+    /// adds a check of the library's shell helper. The exec contract itself
+    /// assumes no shell, so the check is opt-in.
+    #[must_use]
+    pub fn with_shell(mut self) -> Self {
+        self.shell = true;
         self
     }
 
@@ -96,6 +108,9 @@ impl Conformance {
             ("streamed_exec", Scenario::Exec),
             ("cross_handle_stop_fence", Scenario::Fence(&self.catalog)),
         ];
+        if self.shell {
+            scenarios.push(("captured_shell", Scenario::Shell));
+        }
         if let Some(peer) = &self.peer {
             scenarios.push(("cross_instance_stop_fence", Scenario::Fence(peer)));
         }
@@ -116,6 +131,7 @@ impl Conformance {
                     Scenario::Identity => self.identity(sandbox).await,
                     Scenario::Files => Self::files(sandbox).await,
                     Scenario::Exec => self.exec(sandbox).await,
+                    Scenario::Shell => Self::shell(sandbox).await,
                     Scenario::Fence(catalog) => self.fence_with(sandbox, catalog).await,
                 }
             };
@@ -254,6 +270,24 @@ impl Conformance {
         require(
             *output.lock().expect("probe output lock") == self.commands.probe_output,
             "probe output differed",
+        )
+    }
+    async fn shell(sandbox: &dyn Sandbox) -> CheckOutcome {
+        let script = "printf 'to stdout'; printf 'to stderr' >&2; exit 3";
+        let captured = run_shell(sandbox, script).await?;
+        require(
+            captured.outcome.termination == Termination::Exited
+                && captured.outcome.exit_code == Some(3),
+            "the script's exit status was not the command's",
+        )?;
+        require(captured.is_complete(), "shell output was lost")?;
+        require(
+            captured.stdout.bytes == b"to stdout",
+            "shell stdout differed",
+        )?;
+        require(
+            captured.stderr.bytes == b"to stderr",
+            "shell stderr differed",
         )
     }
     async fn fence_with(&self, sandbox: &dyn Sandbox, catalog: &Sandboxes) -> CheckOutcome {

@@ -195,6 +195,26 @@ Rules every method obeys:
 
 `ExecSpec` is argv (no shell), env, working directory, timeout, and `tty`. `ExecControls` is a streamed stdin, an output sink, and two cancellation levels: `term` then `kill`. `ExecOutcome` reports `termination` (`exited`, `timed_out`, `terminated`, `killed`, `lost`), `exit_code`, `signal`, and output-loss counts. With `tty: true` the sink receives one stream and the controls gain `resize`. Dropping the future requests cancellation; it does not confirm that the command has stopped. The library owns bounded cleanup after the drop. `lost` means the execution outcome is unknown, not that the command or sandbox is known to be gone. Only a confirmed termination outcome or a successful sandbox `stop` establishes that the affected execution has ended.
 
+The library adds whole-command helpers over `exec`. They are functions, not a capability, so they work on every provider and plugin with no wire support:
+
+```rust
+/// Runs to completion and keeps up to 16 MiB of each stream.
+pub async fn run_captured(sandbox: &dyn Sandbox, spec: ExecSpec) -> Result<Captured, Error>;
+/// The same with the caller's controls (stdin, stop tokens, a sink that also sees every chunk) and limit.
+pub async fn run_captured_with(
+    sandbox: &dyn Sandbox, spec: ExecSpec, controls: ExecControls, limit: usize,
+) -> Result<Captured, Error>;
+/// `run_captured` of `ExecSpec::shell(script)`.
+pub async fn run_shell(sandbox: &dyn Sandbox, script: &str) -> Result<Captured, Error>;
+
+pub struct Captured { pub outcome: ExecOutcome, pub stdout: CapturedOutput, pub stderr: CapturedOutput }
+pub struct CapturedOutput { pub bytes: Vec<u8>, pub omitted_bytes: u64 }
+```
+
+A command that exits nonzero is a `Captured`, not an error; `success()` is true only for an exit with code zero. Output beyond the limit is still read, so the command never blocks, and is counted in `omitted_bytes`: the first half of the limit is kept from the start of the stream and the rest from its end. `is_complete()` is false when anything was omitted or the provider reported output loss, so check it before parsing output.
+
+`ExecSpec::shell(script)` is the one place a shell is implied. It runs the script under Bash when the workload has `bash` on its `PATH` and under POSIX `sh` otherwise, as a non-login shell with `BASH_ENV` unset. The workload must provide `sh`.
+
 ### Files and ports
 
 `Files` is `get(path, range)`, `put(path, bytes)` creating parents, and `list(path, depth)`. Everything else (`stat`, `remove`, `rename`, `mkdir`) is derived over exec by the library and works on every provider.
