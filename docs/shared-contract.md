@@ -313,7 +313,7 @@ that selects that entry.
   Translate timers carefully: here zero disables a timer, while Daytona's
   `auto_delete_interval` of zero means delete on stop.
 
-The focused tests in `crates/sandbox-driver/tests/shared_contract.rs` cover
+The focused tests in `crates/sandbox-driver/tests/types.rs` cover
 persisted identity independent of environments, namespace refusal, configuration
 and workload decoding, readiness bounds, error uncertainty, schema separation,
 status tolerance and redaction. The existing core/provider/protocol suites must

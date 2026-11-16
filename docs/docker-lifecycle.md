@@ -200,7 +200,7 @@ shell-command endpoint. No timers are enforced, so any timer request is
   primary is already gone removes them by that label before reporting success.
   Neither inventory reports sidecars or one-shots as sandboxes.
 
-`cargo test -p sandbox-driver-docker --test contract -- --ignored` runs the
+`cargo test -p sandbox-driver-docker --test provider -- --ignored` runs the
 shared conformance suite (with a second activated catalog for the
 cross-instance fence), the services and one-shot workload, label round-trip
 and exec on a stopped sandbox, refusal before admission, and reconciliation
