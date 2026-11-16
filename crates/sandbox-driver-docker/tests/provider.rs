@@ -99,6 +99,7 @@ async fn docker_passes_the_shared_contract_suite() {
     })
     .with_peer(peer.clone())
     .with_shell()
+    .with_ambient_variable("PATH")
     .run()
     .await;
     eprintln!("{report}");
