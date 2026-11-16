@@ -11,7 +11,7 @@ use sandbox_driver_testing::contract::{FakeExec, FakeProvider};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    // Offline preview: script a result; no command runs on the host.
+    // Offline example: script a result; no command runs on the host.
     let fake = FakeProvider::new();
     fake.script(["cargo", "test"], FakeExec::default()).await;
     let sandboxes = fake.sandboxes();
@@ -27,12 +27,16 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-**API preview:** This README introduces the upcoming `Sandboxes` interface.
-The examples run today against the in-memory provider in `sandbox-driver-testing`.
-Host, Docker, and Daytona implement it as built-ins, and protocol version 3
-loads third-party plugins; consumer and CLI migration is still in progress.
-See the [target specification](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/next-api.md)
-and the [current provider API](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md).
+**Status:** `Sandboxes` is the sandbox-driver API. It lives in the `contract`
+modules until it moves to the crate root. The examples run against the in-memory
+provider in `sandbox-driver-testing`. Host, Docker, and Daytona implement it as
+built-ins, and protocol version 3 loads third-party plugins. See the
+[API specification](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/next-api.md).
+
+The older crate-root provider API ([design](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md)),
+protocol version 2, and the Host, Docker, and Daytona provider executables are
+still in the tree but are being removed. If you need them, pin tag
+[`v2`](https://github.com/lithoscomputer/sandbox-driver/tree/v2).
 
 Part of [Lithos](#part-of-lithos), a family of Rust building blocks for AI tools.
 
@@ -54,7 +58,7 @@ Use a provider's own SDK when you need operations outside the shared contract.
 
 ## What does it do?
 
-The target interface provides:
+The `Sandboxes` API provides:
 
 - Named environments: select a workload template and override it for one sandbox.
 - Sandbox lifecycle: create, inspect, stop, start, reattach, and destroy.
@@ -78,13 +82,13 @@ Host runs processes in a directory and provides no isolation boundary.
 
 | Crate | Use it when |
 | --- | --- |
-| `sandbox-driver` | Build against the shared API; the preview lives in `contract` |
-| `sandbox-driver-docker` | Embed Docker support or build its provider executable |
-| `sandbox-driver-daytona` | Embed Daytona support or build its provider executable |
-| `sandbox-driver-host` | Embed Host support or build its provider executable |
-| `sandbox-driver-docker-config` | Construct typed Docker options for the current provider API |
-| `sandbox-driver-daytona-config` | Construct typed Daytona options for the current provider API |
-| `sandbox-driver-protocol` | Load or build third-party plugins over protocol version 3; version 2 remains for current clients |
+| `sandbox-driver` | Build against the `Sandboxes` API, in the `contract` module |
+| `sandbox-driver-docker` | Embed the built-in Docker provider |
+| `sandbox-driver-daytona` | Embed the built-in Daytona provider |
+| `sandbox-driver-host` | Embed the built-in Host provider |
+| `sandbox-driver-docker-config` | Construct typed Docker options for the old provider API, which is being removed |
+| `sandbox-driver-daytona-config` | Construct typed Daytona options for the old provider API, which is being removed |
+| `sandbox-driver-protocol` | Load or build third-party plugins over protocol version 3; version 2 is being removed |
 | `sandbox-driver-conformance` | Check a provider against the shared behavioral contract |
 | `sandbox-driver-testing` | Test callers with an in-memory provider and scripted commands |
 | `sandbox-driver-cli` | Install the `lithos-sandbox` command |
@@ -122,7 +126,7 @@ Provider entries stay fixed for the catalog's lifetime. Environments can come
 from a static list, a configuration file, or an application store.
 Applications register provider adapters explicitly; core does not install them.
 See [catalog configuration](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/next-api.md#configuration)
-for the target setup and remaining integration work.
+for the full setup.
 
 Save a `SandboxRef` to return to a sandbox. It contains the provider entry,
 namespace, and sandbox ID, so it does not depend on the environment's name.
@@ -185,7 +189,9 @@ and [diagnostics](https://github.com/lithoscomputer/sandbox-driver/blob/main/doc
 
 ### Use it from the command line
 
-The current CLI still uses the existing provider API and version 2 protocol:
+The CLI has not been ported to the `Sandboxes` API yet. Until it is, it runs
+every provider, including Host, Docker, and Daytona, as a protocol version 2
+plugin executable:
 
 ```sh
 cargo install --git https://github.com/lithoscomputer/sandbox-driver --locked sandbox-driver-cli
@@ -195,21 +201,21 @@ lithos-sandbox provider list
 
 Sandbox operations also need an installed provider executable and its checksum
 configuration. Docker needs a reachable daemon; Daytona needs API credentials.
-See the [current CLI guide](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/cli.md).
-The [planned CLI](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/next-api.md#cli)
+See the [CLI guide](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/cli.md).
+The [ported CLI](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/next-api.md#cli)
 will use the environment catalog; those commands are not available yet.
 
 ## Status and compatibility
 
-- **Maturity:** Pre-1.0; the public API is changing during the migration.
-- **Implemented preview:** The catalog, schema validation, scripted fake, and common conformance suite are available under `contract` modules; Host, Docker, and Daytona provide built-in factories, and `PluginLoader` loads protocol 3 plugins.
-- **Cutover gate:** The shared API, plugin loader, and Docker, Daytona, and Host providers must pass conformance together before real-provider adoption.
+- **Maturity:** Pre-1.0; the public API may change before 1.0.
+- **Implemented:** The catalog, schema validation, scripted fake, and common conformance suite are available under `contract` modules; Host, Docker, and Daytona provide built-in factories, and `PluginLoader` loads protocol 3 plugins.
+- **Conformance:** Host runs the shared conformance suite in the routine tests; Docker runs it with `mise run test:docker` and Daytona with `mise run test:live`.
 - **MSRV:** Rust 1.85, as declared in the workspace manifest.
 - **CI platforms:** macOS arm64, Linux x86_64, and Linux arm64.
-- **Public formats:** Serialized configuration and sandbox references; plugin protocol version 3 for the shared API, with version 2 kept for current clients.
+- **Public formats:** Serialized configuration and sandbox references; plugin protocol version 3. Version 2 is still in the tree and is being removed.
 
-Current provider integration tests are separate from the new-contract gate.
-Host and Docker have in-process and plugin checks; Docker needs a daemon.
+Many provider tests still use the old API; they are being ported to `Sandboxes`.
+Docker's live checks need a daemon: run `mise run test:docker`.
 Daytona's live checks are opt-in: set `DAYTONA_API_KEY` and run `mise run test:live`.
 See [development and verification](https://github.com/lithoscomputer/sandbox-driver/blob/main/DEVELOPING.md).
 
