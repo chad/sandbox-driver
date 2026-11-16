@@ -99,6 +99,11 @@ pub(crate) fn plan(
     if spec.workspace_ownership.is_some() {
         return Err(unsupported("workspace_ownership"));
     }
+    // Refused by name until Docker pulls the workload image with it; this
+    // plan does not consult the descriptor, so nothing else would refuse it.
+    if spec.credential.is_some() {
+        return Err(unsupported("credential"));
+    }
     let network = match &spec.network {
         NetworkPolicy::ProviderDefault => legacy::NetworkPolicy::ProviderDefault,
         NetworkPolicy::AllowAll => legacy::NetworkPolicy::AllowAll,
@@ -471,6 +476,9 @@ mod tests {
         assert_eq!(refused(spec), Some(unsupported("network")));
         let spec = SandboxSpec::new(Source::Dockerfile("FROM alpine".to_owned()));
         assert_eq!(refused(spec), Some(unsupported("source")));
+        let mut spec = image();
+        spec.credential = Some("registry".to_owned());
+        assert_eq!(refused(spec), Some(unsupported("credential")));
         let mut spec = image();
         spec.network = NetworkPolicy::Block;
         spec.services
