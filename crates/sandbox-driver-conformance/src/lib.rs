@@ -217,6 +217,35 @@ impl Conformance {
             }),
             "file missing from list",
         )?;
+        // Depth counts levels below the listed directory, which is never an
+        // entry itself: zero is its children, and each increment adds a level.
+        sandbox
+            .files()
+            .put(
+                "conformance/nested/deep/inner.dat",
+                Box::pin(Cursor::new(b"abc".to_vec())),
+            )
+            .await?;
+        let nested = ("nested", sandbox_driver::FileKind::Directory, None);
+        let binary = ("nested/binary.dat", sandbox_driver::FileKind::File, Some(7));
+        let deep = ("nested/deep", sandbox_driver::FileKind::Directory, None);
+        let inner = (
+            "nested/deep/inner.dat",
+            sandbox_driver::FileKind::File,
+            Some(3),
+        );
+        for (depth, expected) in [
+            (0, vec![nested]),
+            (1, vec![nested, binary, deep]),
+            (2, vec![nested, binary, deep, inner]),
+        ] {
+            let entries = sandbox.files().list("conformance", depth).await?;
+            let listed = listing(&entries);
+            require(
+                listed == expected,
+                &format!("list at depth {depth} returned {listed:?}, expected {expected:?}"),
+            )?;
+        }
         sandbox.stop().await?;
         sandbox.start().await?;
         require(
@@ -326,6 +355,26 @@ async fn read(
         .await
         .map_err(|error| format!("reading {path} failed: {error}"))?;
     Ok(bytes)
+}
+/// Each entry under the suite's `conformance` directory as its path below
+/// that directory, its kind and, for a file, its size, in path order. A
+/// size is only defined for a file.
+fn listing(
+    entries: &[sandbox_driver::FileEntry],
+) -> Vec<(&str, sandbox_driver::FileKind, Option<u64>)> {
+    let mut listed: Vec<_> = entries
+        .iter()
+        .map(|entry| {
+            let path = entry
+                .path
+                .rsplit_once("conformance/")
+                .map_or(entry.path.as_str(), |(_, below)| below);
+            let size = (entry.kind == sandbox_driver::FileKind::File).then_some(entry.size);
+            (path, entry.kind, size)
+        })
+        .collect();
+    listed.sort_unstable_by_key(|(path, ..)| *path);
+    listed
 }
 fn require(condition: bool, message: &str) -> CheckOutcome {
     if condition { Ok(()) } else { fail(message) }
