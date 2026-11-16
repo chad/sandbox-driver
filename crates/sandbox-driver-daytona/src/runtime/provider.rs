@@ -254,7 +254,6 @@ fn descriptor(schemas: ProviderSchemas, namespace: NamespaceId) -> Descriptor {
         ]),
         ports: PortSupport::Any,
         capabilities: CapabilitySet {
-            lifecycle:        BTreeSet::new(),
             endpoints:        BTreeSet::new(),
             services:         true,
             containers:       true,

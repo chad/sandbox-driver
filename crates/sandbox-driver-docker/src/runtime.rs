@@ -31,11 +31,11 @@ use sandbox_driver::contract::{
     AccessScope, Activation, ByteStream, CapabilitySet, ContainerField, Containers, Descriptor,
     Durability, EndpointCapability, Endpoints, Error as ContractError, ExecControls, ExecOutcome,
     ExecSpec, Expose, Exposure, FileEntry, FileRange, Files, Health, JsonSchema, LabelFilter,
-    Lifecycle, LifecycleCapability, Locality, MutationOutcome, Namespace, NamespaceId,
-    NamespaceScope, NetworkMode, NetworkPolicy, OneShotImage, OneShotSpec, OutputStream,
-    PluginLocation, PortSupport, Ports, ProviderFactory, ProviderName, ProviderRuntime,
-    ProviderSchemas, ResourceCapability, Resources, Sandbox, SandboxRef, SandboxState,
-    SandboxSummary, ServiceAddress, SourceKind, Status, Termination, WorkloadAdmission,
+    Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode, NetworkPolicy,
+    OneShotImage, OneShotSpec, OutputStream, PluginLocation, PortSupport, Ports, ProviderFactory,
+    ProviderName, ProviderRuntime, ProviderSchemas, ResourceCapability, Resources, Sandbox,
+    SandboxRef, SandboxState, SandboxSummary, ServiceAddress, SourceKind, Status, Termination,
+    WorkloadAdmission,
 };
 use sandbox_driver::{
     self as legacy, Exec, ExecStreamingResult, Isolation, OneShot, PreviewUrls, SandboxId,
@@ -222,10 +222,6 @@ impl ProviderRuntime for DockerRuntime {
             network:      BTreeSet::from([NetworkMode::AllowAll, NetworkMode::Block]),
             ports:        PortSupport::Any,
             capabilities: CapabilitySet {
-                lifecycle:        BTreeSet::from([
-                    LifecycleCapability::Pause,
-                    LifecycleCapability::Resume,
-                ]),
                 endpoints:        BTreeSet::from([EndpointCapability::ShellCommand]),
                 services:         true,
                 containers:       true,
@@ -580,6 +576,8 @@ impl Sandbox for DockerContractSandbox {
         })
     }
 
+    /// Unpauses a paused container instead of restarting it, so its
+    /// processes carry on; the contract has no separate resume.
     async fn start(&self) -> Result<(), ContractError> {
         legacy::Sandbox::start(self.inner.as_ref())
             .await
@@ -629,10 +627,6 @@ impl Sandbox for DockerContractSandbox {
 
     fn ports(&self) -> &dyn Ports {
         self
-    }
-
-    fn lifecycle(&self) -> Option<&dyn Lifecycle> {
-        Some(self)
     }
 
     fn endpoints(&self) -> Option<&dyn Endpoints> {
@@ -778,29 +772,6 @@ impl Ports for DockerContractSandbox {
             .release_preview_url(port.get())
             .await
             .map_err(to_contract)
-    }
-}
-
-#[async_trait]
-impl Lifecycle for DockerContractSandbox {
-    async fn apply(&self, action: LifecycleCapability) -> Result<(), ContractError> {
-        let capability = match action {
-            LifecycleCapability::Pause => {
-                return legacy::Sandbox::pause(self.inner.as_ref())
-                    .await
-                    .map_err(to_contract);
-            }
-            LifecycleCapability::Resume => {
-                return legacy::Sandbox::resume(self.inner.as_ref())
-                    .await
-                    .map_err(to_contract);
-            }
-            LifecycleCapability::Archive => "lifecycle.archive",
-            LifecycleCapability::Recover => "lifecycle.recover",
-        };
-        Err(ContractError::Unsupported {
-            capability: capability.to_owned(),
-        })
     }
 }
 

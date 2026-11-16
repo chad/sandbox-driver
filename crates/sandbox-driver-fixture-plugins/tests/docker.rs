@@ -97,12 +97,11 @@ async fn docker_over_protocol_3_matches_the_built_in() {
     expected.schemas.kind = actual.schemas.kind.clone();
     // Exemption, removed by the "Protocol 3 optional capabilities" story:
     // protocol 3 does not carry endpoints or one-shot containers yet, so it
-    // masks them. The lifecycle group is leaving the contract instead.
+    // masks them.
     assert!(
         !expected.capabilities.endpoints.is_empty() && expected.capabilities.containers,
         "the exemption covers capabilities Docker really advertises"
     );
-    expected.capabilities.lifecycle.clear();
     expected.capabilities.endpoints.clear();
     expected.capabilities.containers = false;
     // Everything else crosses the wire unchanged, including the namespace:

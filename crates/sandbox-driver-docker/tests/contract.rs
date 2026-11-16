@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use bollard::Docker;
 use bollard::container::{ListContainersOptions, RemoveContainerOptions};
+use bollard::models::ContainerInspectResponse;
 use bollard::network::ListNetworksOptions;
 use sandbox_driver::ProviderKind;
 use sandbox_driver::contract::{
@@ -260,6 +261,60 @@ async fn labels_round_trip_and_a_stopped_sandbox_refuses_exec() {
             .exec(ExecSpec::argv(["true"]), ExecControls::default())
             .await;
         assert!(refused.is_err(), "exec on a stopped sandbox: {refused:?}");
+    }
+    .await;
+    catalog.destroy(&reference).await.expect("destroy");
+}
+
+/// The contract has no resume: `start` brings back a container paused out
+/// of band by unpausing it, not by restarting it, and execution resumes.
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "requires a live Docker daemon"]
+async fn start_unpauses_a_sandbox_paused_out_of_band() {
+    let catalog = catalog(BTreeMap::from([("paused", workload())]));
+    let sandbox = catalog
+        .builder("paused")
+        .await
+        .expect("builder")
+        .label("contract-test", "paused")
+        .create()
+        .await
+        .expect("create");
+    let reference = sandbox.reference();
+    let docker = daemon();
+    let started_at =
+        |inspect: ContainerInspectResponse| inspect.state.and_then(|state| state.started_at);
+    async {
+        let id = reference.id.as_str();
+        let booted = started_at(docker.inspect_container(id, None).await.expect("inspect"));
+        docker.pause_container(id).await.expect("pause");
+        assert_eq!(
+            sandbox.status().await.expect("status").state,
+            SandboxState::Paused
+        );
+
+        sandbox.start().await.expect("start");
+        let inspect = docker.inspect_container(id, None).await.expect("inspect");
+        let state = inspect.state.clone().expect("state");
+        assert_eq!(state.paused, Some(false));
+        assert_eq!(started_at(inspect), booted, "unpaused, not restarted");
+        assert_eq!(
+            sandbox.status().await.expect("status").state,
+            SandboxState::Running
+        );
+        let (sink, output) = capture();
+        let outcome = sandbox
+            .exec(ExecSpec::argv(["printf", "resumed"]), ExecControls {
+                sink: Some(sink),
+                ..ExecControls::default()
+            })
+            .await
+            .expect("exec after start");
+        assert_eq!(
+            (outcome.termination, outcome.exit_code),
+            (Termination::Exited, Some(0))
+        );
+        assert_eq!(output.lock().expect("output").as_slice(), b"resumed");
     }
     .await;
     catalog.destroy(&reference).await.expect("destroy");

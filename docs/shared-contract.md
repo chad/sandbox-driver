@@ -220,6 +220,9 @@ is `Unsupported`. Host rejects service and container workloads.
 - `create` and `start` succeed only once the workload accepts execution and all
   declared service checks pass. Start uses the admitted spec and checks services
   again. A failed create attempts bounded cleanup of everything it provisioned.
+- `start` also brings back a sandbox the backend paused or archived, on its
+  own timer or out of band; status reports `paused` or `archived` until then.
+  Docker unpauses the container rather than restarting it.
 - `stop` blocks new exec, service and one-shot admissions before draining. Success
   confirms that all previously admitted workload execution, services and
   one-shot containers have ended, preserving the workspace. The fence covers
@@ -336,8 +339,9 @@ The additive provider boundary is exported from `sandbox_driver::contract`:
   also prevent reconnect races from moving an admitted call to another
   namespace, and invalidate old sandbox handles on generation changes.
 - `Sandbox` supplies reference/workload environment/workspace, status, start,
-  stop, exec, files and ports. Optional lifecycle, endpoints and containers
-  return `None` unless supported. All errors use `contract::Error`.
+  stop, exec, files and ports. Optional endpoints and containers return `None`
+  unless supported. There is no pause, resume, archive or recover group; it can
+  return in a later revision when a client needs it. All errors use `contract::Error`.
 - `ExecSpec`/`ExecControls`/`ExecOutcome` are distinct from the legacy exec API.
   Controls carry one owned stdin reader, an awaited output sink, term/kill
   tokens and a latest-value terminal resize receiver. `Files` transfers owned

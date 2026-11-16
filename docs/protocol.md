@@ -1170,9 +1170,9 @@ kills in-flight executions and calls the runtime's `shutdown`.
 descriptor a version 3 host reports, matching handles that return `None` for
 them. Endpoints (`ssh`, `ssh_revoke`, `shell_command`, `vnc`) and one-shot
 containers (`containers.run`) stay optional for providers and are carried by
-the follow-up “Protocol 3 optional capabilities” story. The lifecycle
-group (pause, resume, archive, recover) is being removed from the contract
-rather than carried; `start` brings a paused sandbox back to running.
+the follow-up “Protocol 3 optional capabilities” story. The contract has no
+lifecycle group (pause, resume, archive, recover) to carry; `start` brings a
+paused sandbox back to running.
 
 `sandbox-driver-fixture-plugins` holds the fixture plugins: built-in runtimes
 served under non-reserved kinds. `sandbox-driver-test-host` serves the Host
