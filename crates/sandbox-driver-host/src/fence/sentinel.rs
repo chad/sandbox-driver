@@ -15,7 +15,7 @@ use std::{fs as sync_fs, io, mem, slice};
 use nix::errno::Errno;
 use nix::sys::signal::{Signal, killpg};
 use nix::unistd::Pid;
-use sandbox_driver::{Error, ExecResult, ProviderError, Result, Termination};
+use sandbox_driver::legacy::{Error, ExecResult, ProviderError, Result, Termination};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command};
 use tokio::runtime::Handle;
 use tokio::sync::Mutex as AsyncMutex;
@@ -539,7 +539,7 @@ pub(crate) struct HostChild {
 
 impl HostChild {
     /// SIGTERMs the process group, once, and returns: the
-    /// [`sandbox_driver::ExecControls::term`] path. Whether the command
+    /// [`sandbox_driver::legacy::ExecControls::term`] path. Whether the command
     /// ends is the command's business; the caller escalates to `kill` if
     /// it must.
     pub(crate) fn term(&self) {
@@ -547,7 +547,7 @@ impl HostChild {
     }
 
     /// SIGKILLs the process group and waits for the group to settle: the
-    /// [`sandbox_driver::ExecControls::kill`] path, the timeout, and a
+    /// [`sandbox_driver::legacy::ExecControls::kill`] path, the timeout, and a
     /// failing sink. The sentinel stays pinned; only stop reaps it.
     pub(crate) async fn kill(&mut self) {
         let _ = kill_owned_groups(slice::from_ref(&self.group)).await;
@@ -616,7 +616,9 @@ mod tests {
     use std::collections::BTreeMap;
     use std::env;
 
-    use sandbox_driver::{Exec, ExecSpec, SandboxProvider, SandboxSource, SandboxSpec, SpawnSpec};
+    use sandbox_driver::legacy::{
+        Exec, ExecSpec, SandboxProvider, SandboxSource, SandboxSpec, SpawnSpec,
+    };
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
     use super::*;

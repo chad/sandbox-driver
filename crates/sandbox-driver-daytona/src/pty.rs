@@ -10,7 +10,7 @@ use std::process;
 
 use async_trait::async_trait;
 use daytona_sdk::{PtyCreateOptions, PtyHandle};
-use sandbox_driver::{Pty, PtyOptions, PtySession, PtySize, Result};
+use sandbox_driver::legacy::{Pty, PtyOptions, PtySession, PtySize, Result};
 use tokio::sync::{Mutex, RwLock, mpsc};
 
 use crate::sdk::{DaytonaClient, daytona_error};

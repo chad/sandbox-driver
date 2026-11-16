@@ -8,7 +8,7 @@ use std::time::Duration;
 use std::{io, mem};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     BASH_ENV_VAR, Capability, Error, Exec, ExecControls, ExecResult, ExecSpec, ExecStreamingResult,
     OutputSink, Pty, PtyOptions, PtySession, PtySize, Result, SpawnSpec, StdioProcess,
     StdioProcessHandle, StopLevel, Termination, drain_with_stops, run_with_stop_grace,

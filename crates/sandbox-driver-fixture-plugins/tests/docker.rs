@@ -8,12 +8,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sandbox_driver::ProviderKind;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     CatalogOptions, Descriptor, Environment, EnvironmentName, Error, ExecSpec, ProviderEntry,
-    ProviderName, Registry, SandboxSpec, Sandboxes, SecretResolver, Source, StaticEnvironments,
+    ProviderKind, ProviderName, Registry, SandboxSpec, Sandboxes, SecretResolver, Source,
+    StaticEnvironments,
 };
-use sandbox_driver_conformance::contract::{Commands, Conformance};
+use sandbox_driver_conformance::{Commands, Conformance};
 use sandbox_driver_docker::DockerFactory;
 use sandbox_driver_protocol::PluginLoader;
 use serde_json::json;

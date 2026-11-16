@@ -9,7 +9,8 @@
 
 use std::time::{Duration, UNIX_EPOCH};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Action, Capabilities, Capability, Error, ErrorReport, Event, EventBody, EventSubject,
     ForkOptions, GitFailureKind, ResourceKind, SandboxKind, SandboxSnapshotOptions, SandboxSource,
     SandboxSpec, SandboxState, SandboxStatus, SearchCaps, ServiceCaps, SnapshotId, SnapshotMode,
@@ -298,7 +299,7 @@ fn timestamps_cross_as_rfc_3339_and_the_structural_form_still_decodes() {
 fn duration_fields_use_serde_default_encoding_pinned() {
     // LifecycleTimers durations cross as {secs, nanos} in v1; pinned so a
     // change is a deliberate protocol decision, not an accident.
-    let mut timers = sandbox_driver::LifecycleTimers::default();
+    let mut timers = legacy::LifecycleTimers::default();
     timers.auto_stop_after_idle = Some(Duration::from_secs(90));
     let json = serde_json::to_string(&timers).expect("serializes");
     assert!(

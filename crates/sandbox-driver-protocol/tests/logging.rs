@@ -7,7 +7,8 @@ use std::fmt::{self, Write as _};
 use std::mem;
 use std::sync::{Arc, Mutex};
 
-use sandbox_driver::{Error, SandboxProvider, SandboxSource, SandboxSpec};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{Error, SandboxProvider, SandboxSource, SandboxSpec};
 use sandbox_driver_host::HostProvider;
 use sandbox_driver_protocol::{PluginProvider, serve};
 use tokio::io::{duplex, split};
@@ -54,7 +55,7 @@ impl Errors {
 }
 
 /// A Host provider served over an in-memory pipe, and the server task.
-async fn connect() -> (PluginProvider, JoinHandle<sandbox_driver::Result<()>>) {
+async fn connect() -> (PluginProvider, JoinHandle<legacy::Result<()>>) {
     let (host_side, plugin_side) = duplex(1024 * 1024);
     let (host_read, host_write) = split(host_side);
     let (plugin_read, plugin_write) = split(plugin_side);

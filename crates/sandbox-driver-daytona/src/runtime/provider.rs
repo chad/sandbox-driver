@@ -7,16 +7,15 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use daytona_sdk::{DaytonaConfig, SandboxListItem};
 use futures_util::{FutureExt, TryStreamExt};
-use sandbox_driver::contract::{
-    AccessScope, Activation, CapabilitySet, ContainerField, Descriptor, Durability, Error, Health,
-    LabelFilter, Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode,
-    PortSupport, ProviderName, ProviderRuntime, ProviderSchemas, RemainingResource,
-    ResourceCapability, Sandbox, SandboxRef, SandboxSummary, SourceKind, TimerCapability,
-    WorkloadAdmission,
-};
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     EventEmitter, HealthStatus, Isolation, SandboxId, SandboxProvider as _,
     SandboxState as LegacyState,
+};
+use sandbox_driver::{
+    AccessScope, Activation, CapabilitySet, ContainerField, Descriptor, Durability, Error, Health,
+    LabelFilter, Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode,
+    PortSupport, Provider, ProviderName, ProviderSchemas, RemainingResource, ResourceCapability,
+    Sandbox, SandboxRef, SandboxSummary, SourceKind, TimerCapability, WorkloadAdmission, legacy,
 };
 use serde::Deserialize;
 use tokio::time;
@@ -174,7 +173,7 @@ impl DaytonaRuntime {
 }
 
 fn handle_id(handle: &DaytonaSandbox) -> SandboxId {
-    sandbox_driver::Sandbox::id(handle).clone()
+    legacy::Sandbox::id(handle).clone()
 }
 
 /// The API key's own organization, which is where its sandboxes live, or
@@ -275,7 +274,7 @@ fn descriptor(schemas: ProviderSchemas, namespace: NamespaceId) -> Descriptor {
 }
 
 #[async_trait]
-impl ProviderRuntime for DaytonaRuntime {
+impl Provider for DaytonaRuntime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         self.ensure_open()?;
         Ok(self.descriptor.clone())
@@ -421,7 +420,7 @@ mod tests {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::time::Duration;
 
-    use sandbox_driver::contract::{
+    use sandbox_driver::{
         CatalogOptions, Environment, EnvironmentName, ExecControls, ExecSpec, OneShotImage,
         OneShotSpec, ProviderEntry, Registry, SandboxSpec, SandboxState, Sandboxes, SecretResolver,
         Source, StaticEnvironments, Termination,
@@ -785,7 +784,7 @@ mod tests {
             .attach(&reference("sb-1"))
             .await
             .expect("attach");
-        let limit = sandbox_driver::DEFAULT_BUFFER_BYTES as u64;
+        let limit = legacy::DEFAULT_BUFFER_BYTES as u64;
         let refused = sandbox
             .files()
             .put("big.bin", Box::pin(repeat(7).take(limit + 1)))

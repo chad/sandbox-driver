@@ -5,7 +5,7 @@
 use std::result::Result as StdResult;
 
 use bollard::errors::Error as DockerApiError;
-use sandbox_driver::{Error, ProviderError, ProviderKind, Result};
+use sandbox_driver::legacy::{Error, ProviderError, ProviderKind, Result};
 
 /// The POSIX shell every Linux image provides. The exec wrapper, the stop
 /// request, and the container's init command run under it; the user's

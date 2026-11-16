@@ -30,7 +30,7 @@ use bollard::errors::Error as DockerApiError;
 use bollard::image::BuildImageOptions;
 use bollard::models::{HostConfig, Mount};
 use futures_util::{Stream, StreamExt};
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, ExecControls, ExecStreamingResult, OneShot, OneShotImage, OneShotSpec, ProviderError,
     Result, SandboxState, StopLevel, Termination, stop_signal,
 };

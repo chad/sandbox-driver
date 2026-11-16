@@ -8,7 +8,7 @@ use std::sync::atomic::Ordering;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::contract::*;
+use sandbox_driver::*;
 use serde_json::json;
 use support::*;
 use tokio::sync::RwLock;

@@ -91,7 +91,7 @@ construction and binary transfers; they do not replace this hosted gate.
 ## README examples and API migration
 
 The root README follows the Lithos README guide and template. Its examples use
-`sandbox_driver::contract` with the in-memory provider, so they can run before
+the `sandbox_driver` crate root with the in-memory provider, so they can run before
 real-provider migration is complete. The core crate includes them as doctests;
 `mise run test:doc` and the routine gate compile and execute them.
 

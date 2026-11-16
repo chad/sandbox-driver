@@ -10,8 +10,10 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{env, process};
 
-use sandbox_driver::{SandboxFilter, SandboxProvider, SandboxSource, SandboxSpec, SnapshotId};
-use sandbox_driver_conformance::{Conformance, SpecFactory};
+use sandbox_driver::legacy::{
+    SandboxFilter, SandboxProvider, SandboxSource, SandboxSpec, SnapshotId,
+};
+use sandbox_driver_conformance::legacy::{Conformance, SpecFactory};
 use sandbox_driver_daytona_config::{
     DaytonaProviderConfig, DockerExecutionTarget, NestedDockerConfig,
 };

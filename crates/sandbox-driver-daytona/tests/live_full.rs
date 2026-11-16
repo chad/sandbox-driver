@@ -12,7 +12,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::{env, process};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Action, Capability, Error, ExecControls, ExecSpec, ExecStreamingResult, Git,
     GitCheckoutOptions, GitCloneOptions, GitCommitOptions, LifecycleTimers, LogSink, LogSource,
     NetworkPolicy, OutputSink, OutputStream, Resources, Sandbox, SandboxKind, SandboxProvider,
@@ -501,8 +502,8 @@ async fn fast_progress_output_completes_and_reports_loss() {
         )
         .await?;
         match (playwright.result.termination, playwright.result.exit_code) {
-            (sandbox_driver::Termination::Exited, Some(0)) => {}
-            (sandbox_driver::Termination::Exited, Some(97)) => {
+            (legacy::Termination::Exited, Some(0)) => {}
+            (legacy::Termination::Exited, Some(97)) => {
                 eprintln!("fast-progress playwright: skipped, the snapshot has no npx");
             }
             (termination, code) => {
@@ -557,7 +558,7 @@ fn check_burst(
     reason = "the observed loss per run is the test's evidence"
 )]
 async fn run_fast(
-    sandbox: &dyn sandbox_driver::Sandbox,
+    sandbox: &dyn legacy::Sandbox,
     label: &str,
     script: &str,
 ) -> Result<ExecStreamingResult, String> {
@@ -629,7 +630,7 @@ async fn cidr_egress_limits_apply_at_create_and_runtime() {
     outcome.expect("live CIDR egress policy");
 }
 
-async fn tcp_probe(sandbox: &dyn sandbox_driver::Sandbox) -> Result<String, String> {
+async fn tcp_probe(sandbox: &dyn legacy::Sandbox) -> Result<String, String> {
     let result = sandbox
         .exec()
         .run(
@@ -731,7 +732,7 @@ async fn stop_resize_archive_restore_lifecycle() {
         let result = sandbox
             .exec()
             .run(
-                &sandbox_driver::ExecSpec::new("echo")
+                &legacy::ExecSpec::new("echo")
                     .arg("restored")
                     .timeout(Duration::from_secs(60)),
             )
@@ -809,7 +810,7 @@ async fn fork_and_snapshot_modes_preserve_their_declared_state() {
             panic!("create VM: {error}");
         }
     };
-    let mut created_sandboxes: Vec<Arc<dyn sandbox_driver::Sandbox>> = Vec::new();
+    let mut created_sandboxes: Vec<Arc<dyn legacy::Sandbox>> = Vec::new();
     let mut created_snapshots = vec![vm_snapshot_id];
 
     let outcome = async {
@@ -854,7 +855,7 @@ async fn fork_and_snapshot_modes_preserve_their_declared_state() {
         let source_pid = setup.stdout_lossy().trim().to_owned();
 
         let forked = source
-            .fork(&sandbox_driver::ForkOptions::default())
+            .fork(&legacy::ForkOptions::default())
             .await
             .map_err(|error| format!("fork: {error}"))?;
         created_sandboxes.push(Arc::clone(&forked));
@@ -901,7 +902,7 @@ async fn fork_and_snapshot_modes_preserve_their_declared_state() {
             .await
             .map_err(|error| format!("waiting for stopped source: {error}"))?;
         if !matches!(
-            source.fork(&sandbox_driver::ForkOptions::default()).await,
+            source.fork(&legacy::ForkOptions::default()).await,
             Err(Error::InvalidState {
                 current: SandboxState::Stopped,
                 action:  Action::Fork,
@@ -1086,7 +1087,7 @@ fn snapshot_probe(marker: &str, pid: &str, process: &str, mode: &str) -> ExecSpe
 }
 
 async fn assert_live_process(
-    sandbox: &dyn sandbox_driver::Sandbox,
+    sandbox: &dyn legacy::Sandbox,
     expected_pid: &str,
 ) -> Result<(), String> {
     let result = sandbox
@@ -1157,7 +1158,7 @@ async fn snapshot_provider_round_trip() {
             ));
         }
         // It must appear in a name-filtered list.
-        let mut filter = sandbox_driver::SnapshotFilter::default();
+        let mut filter = legacy::SnapshotFilter::default();
         filter.name = Some(name.clone());
         let listed = snapshots
             .list(&filter)
@@ -1179,7 +1180,7 @@ async fn snapshot_provider_round_trip() {
         let result = sandbox
             .exec()
             .run(
-                &sandbox_driver::ExecSpec::new("cat")
+                &legacy::ExecSpec::new("cat")
                     .arg("/etc/debian_version")
                     .timeout(Duration::from_secs(60)),
             )
@@ -1316,7 +1317,7 @@ fn collecting_sink(output: Arc<Mutex<Vec<u8>>>) -> LogSink {
 }
 
 async fn wait_for_snapshot_state(
-    snapshots: &dyn sandbox_driver::SnapshotProvider,
+    snapshots: &dyn legacy::SnapshotProvider,
     id: &sandbox_driver::SnapshotId,
     expected: SnapshotState,
 ) -> Result<(), String> {

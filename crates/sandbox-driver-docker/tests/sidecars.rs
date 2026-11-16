@@ -5,7 +5,7 @@
 
 use std::process;
 
-use sandbox_driver::{ExecSpec, SandboxProvider, SandboxSource, SandboxSpec};
+use sandbox_driver::legacy::{ExecSpec, SandboxProvider, SandboxSource, SandboxSpec};
 use sandbox_driver_docker::DockerProvider;
 
 const TEST_IMAGE: &str = "ghcr.io/lithoscomputer/ubuntu-24.04:slim-df708f910111";

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     DerivedFs, DirEntry, Error, Exec, ExecFailure, ExecSpec, FileMetadata, Filesystem,
     ResourceKind, Result,
 };

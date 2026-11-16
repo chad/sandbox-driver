@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use async_trait::async_trait;
 use daytona_api_client::models::UpdateSandboxNetworkSettings;
 use daytona_sdk::DaytonaError;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Action, Capabilities, Capability, Error, EventEmitter, EventSubject, Exec, ExecFailure,
     ExecSpec, Filesystem, ForkOptions, Git, LifecycleTimers, Logs, NetworkPolicy, OneShot,
     PlatformInfo, PreviewUrls, Pty, Resources, Result, Sandbox, SandboxId, SandboxSnapshotOptions,
@@ -917,7 +917,7 @@ impl Sandbox for DaytonaSandbox {
 #[cfg(test)]
 mod tests {
     use daytona_sdk::{DaytonaConfig, SandboxClass, SandboxListItem};
-    use sandbox_driver::SandboxKind;
+    use sandbox_driver::legacy::SandboxKind;
 
     use super::*;
     use crate::labels::MANAGED_LABEL;

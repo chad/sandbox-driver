@@ -3,7 +3,7 @@
 use std::error::Error as StdError;
 
 use bollard::errors::Error as DockerApiError;
-use sandbox_driver::{Error, ErrorReport, ProviderError, TransportError};
+use sandbox_driver::legacy::{Error, ErrorReport, ProviderError, TransportError};
 use serde_json::{Map, Value};
 
 use crate::daemon::docker_kind;

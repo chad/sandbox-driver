@@ -4,7 +4,7 @@ use std::future::Future;
 use std::io;
 use std::time::Duration;
 
-use sandbox_driver::{Error, Exec, ExecControls, ExecResult, ExecSpec, Result};
+use sandbox_driver::legacy::{Error, Exec, ExecControls, ExecResult, ExecSpec, Result};
 use tokio::runtime::Handle;
 use tokio::task::JoinHandle;
 use tokio::time;

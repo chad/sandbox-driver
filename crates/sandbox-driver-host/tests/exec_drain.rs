@@ -4,7 +4,7 @@ use std::future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, ExecControls, ExecSpec, SandboxProvider, SandboxSource, SandboxSpec, Termination,
 };
 use sandbox_driver_host::HostProvider;

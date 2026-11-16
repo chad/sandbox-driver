@@ -17,7 +17,7 @@ use std::time::Duration;
 use nix::sys::signal::{Signal, killpg};
 #[cfg(unix)]
 use nix::unistd::Pid;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Error, MutationOutcome, PluginLocation, PluginTrust, ProviderName, ProviderSchemas,
     Sha256Digest,
 };

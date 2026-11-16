@@ -2,8 +2,10 @@
 
 use std::time::Duration;
 
-use sandbox_driver::contract::RemainingResource;
-use sandbox_driver::{Error, ErrorReport, ProviderError, ProviderKind, Result, SandboxState};
+use sandbox_driver::RemainingResource;
+use sandbox_driver::legacy::{
+    Error, ErrorReport, ProviderError, ProviderKind, Result, SandboxState,
+};
 use tokio::time;
 
 use crate::TRANSITION_POLL;

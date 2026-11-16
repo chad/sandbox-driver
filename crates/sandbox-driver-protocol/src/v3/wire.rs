@@ -7,11 +7,11 @@ use std::fmt;
 use std::num::NonZeroU16;
 use std::path::PathBuf;
 
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{ErrorReport, SandboxId, StopLevel};
+use sandbox_driver::{
     Error, ExecSpec, Expose, FileRange, LabelFilter, MutationOutcome, ProviderName, SandboxRef,
-    SandboxSpec, TerminalSize,
+    SandboxSpec, TerminalSize, legacy,
 };
-use sandbox_driver::{ErrorReport, SandboxId, StopLevel};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -39,7 +39,7 @@ pub const FILES_LIST: &str = "files.list";
 pub const PORTS_EXPOSE: &str = "ports.expose";
 pub const PORTS_RELEASE: &str = "ports.release";
 
-/// Error reports whose `detail` is a serialized `contract::Error`.
+/// Error reports whose `detail` is a serialized `sandbox_driver::Error`.
 const CONTRACT_ERROR: &str = "contract";
 
 /// The configured entry's identity and connection settings. Secret values
@@ -202,7 +202,7 @@ pub(crate) fn from_failure(failure: Failure) -> Error {
                 },
             }
         }
-        Failure::Local(sandbox_driver::Error::Overloaded { limit }) => Error::ResourceExhausted {
+        Failure::Local(legacy::Error::Overloaded { limit }) => Error::ResourceExhausted {
             message:        format!("local transport budget {limit} is exhausted"),
             retry_after_ms: None,
         },

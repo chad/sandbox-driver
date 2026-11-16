@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{ExecSpec, PtyOptions, SandboxProvider, SandboxSource, SandboxSpec};
+use sandbox_driver::legacy::{ExecSpec, PtyOptions, SandboxProvider, SandboxSource, SandboxSpec};
 use sandbox_driver_docker::DockerProvider;
 use tokio::time;
 

@@ -6,7 +6,8 @@ use std::{io, mem, process};
 
 use async_trait::async_trait;
 use daytona_sdk::{DaytonaError, FileSystemService, ProcessService, SessionCommandLogsResult};
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, Exec, ExecControls, ExecResult, ExecSpec, ExecStreamingResult, IncompleteOperation,
     OutputCaptureBuffer, OutputSanitizer, OutputSink, OutputStream, Result, SpawnSpec,
     StdioProcess, StopLevel, Termination, run_with_stop_grace,
@@ -78,10 +79,10 @@ struct StdinFile {
 
 impl StdinFile {
     async fn create(client: &DaytonaClient, sandbox_id: &str, bytes: &[u8]) -> Result<Self> {
-        if bytes.len() > sandbox_driver::DEFAULT_BUFFER_BYTES {
+        if bytes.len() > legacy::DEFAULT_BUFFER_BYTES {
             return Err(Error::LimitExceeded {
                 limit:     "buffered_value_bytes".into(),
-                max_bytes: sandbox_driver::DEFAULT_BUFFER_BYTES,
+                max_bytes: legacy::DEFAULT_BUFFER_BYTES,
             });
         }
         let fs = toolbox::fs(client, sandbox_id).await?;

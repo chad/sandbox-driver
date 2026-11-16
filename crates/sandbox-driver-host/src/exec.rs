@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use std::{env, future, io};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, Exec, ExecControls, ExecResult, ExecSpec, ExecStreamingResult, OutputCaptureBuffer,
     OutputSanitizer, OutputSink, OutputStream, Result, SpawnSpec, StderrTail, StdioProcess,
     StdioProcessHandle, Termination, feed_stdin, finish_stdin_writer, run_with_stop_grace,
@@ -26,7 +26,7 @@ use crate::registry;
 
 /// Bash sources this file at startup. Dropped from the inherited
 /// environment so a worker's startup file never runs inside a sandboxed
-/// `bash -c`; [`sandbox_driver::ExecSpec::bash`] blanks it per command.
+/// `bash -c`; [`sandbox_driver::legacy::ExecSpec::bash`] blanks it per command.
 const BASH_ENV_VAR: &str = "BASH_ENV";
 
 /// How long the output pipes may stay silent after the process has ended

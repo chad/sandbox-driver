@@ -4,9 +4,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::SandboxId;
-use sandbox_driver::contract::*;
-use sandbox_driver_testing::contract::FakeProvider;
+use sandbox_driver::{SandboxId, *};
+use sandbox_driver_testing::FakeProvider;
 use tokio::sync::Mutex;
 use tokio::time;
 
@@ -64,7 +63,7 @@ impl ProviderFactory for FactoryAdapter {
         self.0.discovery.fetch_add(1, Ordering::SeqCst);
         Ok(self.0.schemas.clone())
     }
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
         self.0.activations.lock().await.push(activation.clone());
         let runtime = self.0.fake.activate(activation).await?;
         Ok(Arc::new(Runtime {
@@ -75,10 +74,10 @@ impl ProviderFactory for FactoryAdapter {
 }
 struct Runtime {
     factory: Arc<Factory>,
-    runtime: Arc<dyn ProviderRuntime>,
+    runtime: Arc<dyn Provider>,
 }
 #[async_trait]
-impl ProviderRuntime for Runtime {
+impl Provider for Runtime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         let mut descriptor = self.runtime.describe().await?;
         descriptor.schemas = self.factory.schemas.clone();

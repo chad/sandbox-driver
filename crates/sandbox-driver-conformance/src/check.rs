@@ -7,12 +7,12 @@ use std::process;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capabilities, Capability, ExecResult, ExecSpec, OutputSink, OutputStream, Sandbox,
 };
 use tokio::time;
 
-use crate::Conformance;
+use crate::legacy::Conformance;
 
 /// The budget every short command in the suite runs under.
 pub(crate) const COMMAND_TIMEOUT: Duration = Duration::from_secs(30);

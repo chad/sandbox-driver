@@ -14,17 +14,17 @@ use async_trait::async_trait;
 use nix::errno::Errno;
 use nix::fcntl::{Flock, FlockArg};
 use nix::unistd::gethostname;
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{
+    FileKind, Isolation, OutputStream, SandboxId, SandboxProvider, SandboxSource, StdinSource,
+    WorkspaceOwnership,
+};
+use sandbox_driver::{
     AccessScope, Activation, ByteStream, CapabilitySet, Descriptor, Durability, Error,
     ExecControls, ExecOutcome, ExecSpec, Expose, Exposure, FileEntry, FileRange, Files, Health,
     LabelFilter, Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode,
-    OutputStream as ContractStream, PluginLocation, PortSupport, Ports, ProviderFactory,
-    ProviderName, ProviderRuntime, ProviderSchemas, RemainingResource, Resources, Sandbox,
-    SandboxRef, SandboxState, SandboxSummary, SourceKind, Status, Termination, WorkloadAdmission,
-};
-use sandbox_driver::{
-    FileKind, Isolation, OutputStream, SandboxId, SandboxProvider, SandboxSource, StdinSource,
-    WorkspaceOwnership,
+    OutputStream as ContractStream, PluginLocation, PortSupport, Ports, Provider, ProviderFactory,
+    ProviderName, ProviderSchemas, RemainingResource, Resources, Sandbox, SandboxRef, SandboxState,
+    SandboxSummary, SourceKind, Status, Termination, WorkloadAdmission, legacy,
 };
 use serde_json::json;
 use tokio::fs as tokio_fs;
@@ -71,7 +71,7 @@ impl ProviderFactory for HostFactory {
         Ok(schemas())
     }
 
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
         Ok(Arc::new(HostRuntime::start(activation.name).await?))
     }
 }
@@ -101,7 +101,7 @@ fn descriptor() -> Descriptor {
 
 /// A sandbox this instance created and still owns.
 struct Owned {
-    legacy:     Arc<dyn sandbox_driver::Sandbox>,
+    legacy:     Arc<dyn legacy::Sandbox>,
     workspace:  PathBuf,
     designated: bool,
     name:       Option<String>,
@@ -211,7 +211,7 @@ impl HostRuntime {
 }
 
 #[async_trait]
-impl ProviderRuntime for HostRuntime {
+impl Provider for HostRuntime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         Ok(self.descriptor.clone())
     }
@@ -235,7 +235,7 @@ impl ProviderRuntime for HostRuntime {
         if spec.container.is_some() {
             return Err(unsupported("container"));
         }
-        let mut legacy = sandbox_driver::SandboxSpec::new(SandboxSource::HostDirectory);
+        let mut legacy = legacy::SandboxSpec::new(SandboxSource::HostDirectory);
         legacy.name = spec.name.clone();
         legacy.labels = spec.labels.clone();
         legacy.env = spec.env.clone();
@@ -404,12 +404,12 @@ impl Sandbox for HostSandbox {
         }
         let mut argv = spec.argv.into_iter();
         let program = argv.next().expect("validated argv");
-        let mut legacy = sandbox_driver::ExecSpec::new(program).args(argv);
+        let mut legacy = legacy::ExecSpec::new(program).args(argv);
         legacy.timeout = spec.timeout_ms.map(Duration::from_millis);
         legacy.working_dir = spec.working_directory;
         legacy.env = spec.env;
         let sink = controls.sink.map(|sink| {
-            let sink: sandbox_driver::OutputSink = Arc::new(move |stream, chunk| {
+            let sink: legacy::OutputSink = Arc::new(move |stream, chunk| {
                 let stream = match stream {
                     OutputStream::Stdout => ContractStream::Stdout,
                     OutputStream::Stderr => ContractStream::Stderr,
@@ -417,9 +417,7 @@ impl Sandbox for HostSandbox {
                 let delivery = sink(stream, chunk);
                 Box::pin(async move {
                     delivery.await.map_err(|error| {
-                        sandbox_driver::Error::Transport(sandbox_driver::TransportError::new(
-                            error.to_string(),
-                        ))
+                        legacy::Error::Transport(legacy::TransportError::new(error.to_string()))
                     })
                 })
             });
@@ -430,7 +428,7 @@ impl Sandbox for HostSandbox {
             .owned
             .legacy
             .exec()
-            .run_streaming(&legacy, sandbox_driver::ExecControls {
+            .run_streaming(&legacy, legacy::ExecControls {
                 term: controls.term,
                 kill: controls.kill,
                 stdin: controls.stdin.map(StdinSource::new),
@@ -443,16 +441,16 @@ impl Sandbox for HostSandbox {
             termination: match result.result.termination {
                 // A process with no exit code died by a signal; one sent by
                 // a fence that began during the run is the stop's kill.
-                sandbox_driver::Termination::Exited
+                legacy::Termination::Exited
                     if result.result.exit_code.is_none()
                         && self.owned.fences.load(Ordering::SeqCst) != fences =>
                 {
                     Termination::Killed
                 }
-                sandbox_driver::Termination::Exited => Termination::Exited,
-                sandbox_driver::Termination::TimedOut => Termination::TimedOut,
-                sandbox_driver::Termination::Cancelled => Termination::Terminated,
-                sandbox_driver::Termination::Killed => Termination::Killed,
+                legacy::Termination::Exited => Termination::Exited,
+                legacy::Termination::TimedOut => Termination::TimedOut,
+                legacy::Termination::Cancelled => Termination::Terminated,
+                legacy::Termination::Killed => Termination::Killed,
                 _ => Termination::Lost,
             },
             exit_code:   result.result.exit_code,
@@ -584,17 +582,17 @@ impl Ports for HostPorts {
     }
 }
 
-async fn state_of(sandbox: &dyn sandbox_driver::Sandbox) -> Result<SandboxState, Error> {
+async fn state_of(sandbox: &dyn legacy::Sandbox) -> Result<SandboxState, Error> {
     let status = sandbox.describe().await.map_err(contract_error)?;
     Ok(match status.state {
-        sandbox_driver::SandboxState::Running => SandboxState::Running,
-        sandbox_driver::SandboxState::Stopped => SandboxState::Stopped,
-        sandbox_driver::SandboxState::Stopping => SandboxState::Stopping,
-        sandbox_driver::SandboxState::Starting => SandboxState::Starting,
-        sandbox_driver::SandboxState::Creating => SandboxState::Creating,
-        sandbox_driver::SandboxState::Deleting => SandboxState::Deleting,
-        sandbox_driver::SandboxState::Deleted => SandboxState::Deleted,
-        sandbox_driver::SandboxState::Error => SandboxState::Unhealthy,
+        legacy::SandboxState::Running => SandboxState::Running,
+        legacy::SandboxState::Stopped => SandboxState::Stopped,
+        legacy::SandboxState::Stopping => SandboxState::Stopping,
+        legacy::SandboxState::Starting => SandboxState::Starting,
+        legacy::SandboxState::Creating => SandboxState::Creating,
+        legacy::SandboxState::Deleting => SandboxState::Deleting,
+        legacy::SandboxState::Deleted => SandboxState::Deleted,
+        legacy::SandboxState::Error => SandboxState::Unhealthy,
         _ => SandboxState::Unknown,
     })
 }
@@ -689,8 +687,8 @@ fn file_error(path: &str, error: &io::Error) -> Error {
 /// The legacy implementation's errors in the shared vocabulary. Only a
 /// classification the legacy error establishes is kept; anything else is an
 /// unknown outcome, never absence or success.
-fn contract_error(error: sandbox_driver::Error) -> Error {
-    use sandbox_driver::Error as Legacy;
+fn contract_error(error: legacy::Error) -> Error {
+    use sandbox_driver::legacy::Error as Legacy;
     match error {
         Legacy::NotFound { resource, id } => Error::NotFound {
             resource: format!("{resource:?}").to_ascii_lowercase(),

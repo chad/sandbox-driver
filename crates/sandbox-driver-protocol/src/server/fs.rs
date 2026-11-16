@@ -3,7 +3,7 @@
 use std::io;
 use std::sync::Arc;
 
-use sandbox_driver::{Error, Filesystem, Result};
+use sandbox_driver::legacy::{Error, Filesystem, Result};
 use serde_json::Value;
 use tokio::io::{AsyncReadExt, AsyncWrite, AsyncWriteExt, duplex};
 use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};

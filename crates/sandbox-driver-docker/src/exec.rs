@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use bollard::container::LogOutput;
 use bollard::exec::CreateExecOptions;
 use futures_util::StreamExt;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     BASH_ENV_VAR, Error, Exec, ExecControls, ExecResult, ExecSpec, ExecStreamingResult, Result,
     SpawnSpec, StderrTail, StdioProcess, StdioProcessHandle, StopLevel, Termination, feed_stdin,
     finish_stdin_writer, run_with_stop_grace,

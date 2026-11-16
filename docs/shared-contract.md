@@ -1,11 +1,11 @@
 # Shared sandbox contract
 
-This is the implementation handoff for `sandbox_driver::contract`. The API
+This is the implementation handoff for the `sandbox_driver` crate root. The API
 itself, as a consumer or plugin author reads it, is [docs/next-api.md](next-api.md);
 this document states the required behavior behind those shapes and the
 migration rules. It defines common data and required behavior for the next API. It does **not** claim the
-existing providers implement that behavior yet. The current crate-root traits,
-errors, specs, provider libraries, executables, and [protocol v2](protocol.md)
+existing providers implement that behavior yet. The older traits, errors and
+specs (now under `sandbox_driver::legacy`), provider libraries, executables, and [protocol v2](protocol.md)
 remain supported during migration. The additive façade, registration boundary,
 scripted fake and common conformance checks now consume these declarations.
 No new transport or consumer cutover is introduced by core.
@@ -14,13 +14,13 @@ No new transport or consumer cutover is introduced by core.
 
 | Current surface | New declarations | Migration rule |
 | --- | --- | --- |
-| `sandbox_driver::SandboxSpec` | `contract::SandboxSpec` | Distinct types; no blanket conversion. Translate only after the provider implements workload targeting and rejects unsupported fields. |
-| `sandbox_driver::Error` | `contract::Error` | Keep existing error matching and wire error mapping unchanged. New adapters classify using evidence, not message text. |
-| `Capabilities` and background `Services` facet | `contract::Descriptor`, `CapabilitySet`, workload services | No inference from old flags to new guarantees. Workload services are not a new accessor. |
-| `SandboxId`, legacy attach | `contract::SandboxRef` | No inferred namespace for old IDs. Consumers must explicitly migrate saved records or retain old readers. |
+| `sandbox_driver::legacy::SandboxSpec` | `sandbox_driver::SandboxSpec` | Distinct types; no blanket conversion. Translate only after the provider implements workload targeting and rejects unsupported fields. |
+| `sandbox_driver::legacy::Error` | `sandbox_driver::Error` | Keep existing error matching and wire error mapping unchanged. New adapters classify using evidence, not message text. |
+| `Capabilities` and background `Services` facet | `Descriptor`, `CapabilitySet`, workload services | No inference from old flags to new guarantees. Workload services are not a new accessor. |
+| `SandboxId`, legacy attach | `SandboxRef` | No inferred namespace for old IDs. Consumers must explicitly migrate saved records or retain old readers. |
 | v2 initialize and operation DTOs | Common serializable declarations | No v2 handshake additions or version bump here. The protocol work negotiates the next version and adds explicit adapters. |
 
-The `contract` module is the shared import location for all new provider and
+The crate root is the shared import location for all new provider and
 client work. Existing
 public exports and required trait methods are unchanged. A new provider may
 reuse legacy implementation internals, but must not claim the new semantics
@@ -297,7 +297,7 @@ that selects that entry.
 
 ## Handoff and verification
 
-- **Core API:** consume `contract` types; implement catalog/schema admission,
+- **Core API:** consume the crate-root types; implement catalog/schema admission,
   environment overrides, immutable bindings, namespace-checked refs, façade,
   fake and validation. Do not synthesize refs for legacy records.
 - **Plugin loader:** implement metadata discovery and configured lazy launch,
@@ -313,7 +313,7 @@ that selects that entry.
   Translate timers carefully: here zero disables a timer, while Daytona's
   `auto_delete_interval` of zero means delete on stop.
 
-The focused tests in `crates/sandbox-driver/tests/shared_contract.rs` cover
+The focused tests in `crates/sandbox-driver/tests/types.rs` cover
 persisted identity independent of environments, namespace refusal, configuration
 and workload decoding, readiness bounds, error uncertainty, schema separation,
 status tolerance and redaction. The existing core/provider/protocol suites must
@@ -323,7 +323,7 @@ fixture plugin before any consumer cutover or legacy removal.
 
 ### Provider interface implementation
 
-The additive provider boundary is exported from `sandbox_driver::contract`:
+The additive provider boundary is exported from the `sandbox_driver` crate root:
 
 - `ProviderFactory::discover(&PluginLocation)` receives only the entry name
   (for errors), kind, path and trust. The plugin adapter owns verification,
@@ -332,8 +332,8 @@ The additive provider boundary is exported from `sandbox_driver::contract`:
 - `ProviderFactory::activate(Activation)` receives the selected entry name,
   frozen connection/launch configuration, discovered schemas, resolved launch
   environment and separate redacted `SecretValues`. It returns an
-  `Arc<dyn ProviderRuntime>`. Built-ins do not read ambient configuration.
-- `ProviderRuntime` supplies `describe`, `health`, `create(WorkloadAdmission)`,
+  `Arc<dyn Provider>`. Built-ins do not read ambient configuration.
+- `Provider` supplies `describe`, `health`, `create(WorkloadAdmission)`,
   `attach(&SandboxId)`, `list(&LabelFilter)`, `destroy(&SandboxId)` and `shutdown`.
   The catalog checks namespace before routing attach/destroy. A runtime must
   also prevent reconnect races from moving an admitted call to another
@@ -341,7 +341,7 @@ The additive provider boundary is exported from `sandbox_driver::contract`:
 - `Sandbox` supplies reference/workload environment/workspace, status, start,
   stop, exec, files and ports. Optional endpoints and containers return `None`
   unless supported. There is no pause, resume, archive or recover group; it can
-  return in a later revision when a client needs it. All errors use `contract::Error`.
+  return in a later revision when a client needs it. All errors use `sandbox_driver::Error`.
 - `ExecSpec`/`ExecControls`/`ExecOutcome` are distinct from the legacy exec API.
   Controls carry one owned stdin reader, an awaited output sink, term/kill
   tokens and a latest-value terminal resize receiver. `Files` transfers owned
@@ -359,7 +359,7 @@ The additive provider boundary is exported from `sandbox_driver::contract`:
 These are implementation interfaces, not proof of provider conformance. The
 façade, schema engine, scripted fake and reusable conformance suite are
 implemented. Real provider/transport conformance remains an integration gate.
-Existing crate-root traits and protocol v2 are unchanged.
+The older traits under `legacy` and protocol v2 are unchanged.
 
 ### Plugin metadata discovery
 
@@ -407,7 +407,7 @@ bytes, not interpreters, shared libraries, or dependencies.
 
 ### Scripted fake provider
 
-`sandbox_driver_testing::contract::FakeProvider` implements the provider
+`sandbox_driver_testing::FakeProvider` implements the provider
 factory/runtime boundary in memory. Consumers use `sandbox-driver-testing` as
 a dev-dependency; the core library exports no fake. `script` supplies command
 responses; unscripted commands fail without executing on the host. Clones share
@@ -415,5 +415,5 @@ workload state and call history. The fake supports required lifecycle, identity,
 files and streaming execution, and advertises no optional workload capabilities.
 Its focused tests exercise cancellation, shutdown uncertainty and workload-relative
 file paths directly through the provider interfaces. The testing crate provides
-`FakeProvider::sandboxes` and `contract::fake` helpers; the reusable conformance
+`FakeProvider::sandboxes` and `fake` helpers; the reusable conformance
 suite exercises the fake through those helpers.

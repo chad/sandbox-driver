@@ -16,7 +16,7 @@ use daytona_sdk::{
 };
 use futures_util::TryStreamExt;
 use futures_util::future::BoxFuture;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Action, AuthError, Capabilities, Error, EventContext, EventEmitter, EventSubject, HealthStatus,
     Isolation, LogsCaps, NetworkPolicy, ProviderError, ProviderHealth, ProviderKind, PtyCaps,
     ResourceKind, Resources, Result, Sandbox, SandboxFilter, SandboxId, SandboxKind,

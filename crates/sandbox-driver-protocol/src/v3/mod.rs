@@ -15,8 +15,8 @@ use std::env;
 use std::io::{self, Write as _};
 use std::sync::Arc;
 
-use sandbox_driver::SandboxProvider;
-use sandbox_driver::contract::{ProviderFactory, ProviderSchemas};
+use sandbox_driver::legacy::SandboxProvider;
+use sandbox_driver::{ProviderFactory, ProviderSchemas, legacy};
 use tokio::io::{stdin, stdout};
 
 pub use self::loader::PluginLoader;
@@ -60,12 +60,12 @@ impl Plugin {
 /// schemas and returns before anything else is constructed; otherwise the
 /// plugin serves stdin/stdout until EOF or `shutdown`, and on the way out its
 /// runtime gets a bounded cleanup.
-pub async fn run_plugin(plugin: Plugin) -> sandbox_driver::Result<()> {
+pub async fn run_plugin(plugin: Plugin) -> legacy::Result<()> {
     let mut args = env::args_os().skip(1);
     if let (Some(flag), None) = (args.next(), args.next()) {
         if flag == "--describe-schema" {
             let Some((schemas, _)) = &plugin.v3 else {
-                return Err(sandbox_driver::Error::invalid_spec(
+                return Err(legacy::Error::invalid_spec(
                     "--describe-schema",
                     "this plugin does not serve the shared contract",
                 ));
@@ -73,7 +73,7 @@ pub async fn run_plugin(plugin: Plugin) -> sandbox_driver::Result<()> {
             let mut out = io::stdout().lock();
             return metadata::write_schema(&mut out, schemas)
                 .and_then(|()| out.flush())
-                .map_err(|error| sandbox_driver::Error::io("writing plugin schemas", error));
+                .map_err(|error| legacy::Error::io("writing plugin schemas", error));
         }
     }
     serve_plugin_with_limits(plugin, stdin(), stdout(), TransportLimits::default()).await

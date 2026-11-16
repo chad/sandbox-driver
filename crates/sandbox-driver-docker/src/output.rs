@@ -9,7 +9,8 @@ use std::time::Duration;
 use bollard::container::LogOutput;
 use bollard::errors::Error as DockerApiError;
 use futures_util::{Stream, StreamExt};
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     ExecControls, ExecResult, ExecStreamingResult, OutputCaptureBuffer, OutputSanitization,
     OutputSanitizer, OutputSink, OutputStream, Result, StopLevel, Termination,
 };
@@ -27,9 +28,10 @@ pub(crate) struct DrainOutcome {
     pub(crate) stream:      StdResult<(), DockerApiError>,
 }
 
-/// Drains `output` into `captured` under [`sandbox_driver::drain_with_stops`]
-/// with the operation `timeout` that remains and [`KILL_DRAIN_GRACE`]; a
-/// drain the grace abandoned is reported truncated with its stream intact.
+/// Drains `output` into `captured` under
+/// [`sandbox_driver::legacy::drain_with_stops`] with the operation `timeout`
+/// that remains and [`KILL_DRAIN_GRACE`]; a drain the grace abandoned is
+/// reported truncated with its stream intact.
 pub(crate) async fn drain_with_stops<F, Fut>(
     captured: &mut StreamOutput,
     output: impl Stream<Item = StdResult<LogOutput, DockerApiError>> + Unpin,
@@ -43,7 +45,7 @@ where
 {
     let sink_failed = CancellationToken::new();
     let mut drain = pin!(captured.drain(output, controls.sink.as_ref(), &sink_failed));
-    let outcome = sandbox_driver::drain_with_stops(
+    let outcome = legacy::drain_with_stops(
         drain.as_mut(),
         &sink_failed,
         controls,

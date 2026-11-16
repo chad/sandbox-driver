@@ -8,11 +8,12 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, process};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     LogSink, LogSource, SandboxKind, SandboxProvider, SandboxSource, SandboxSpec, SnapshotId,
     SnapshotSource, SnapshotSpec, SnapshotState,
 };
-use sandbox_driver_conformance::{Conformance, SpecFactory};
+use sandbox_driver_conformance::legacy::{Conformance, SpecFactory};
 use sandbox_driver_daytona::DaytonaProvider;
 use sandbox_driver_protocol::{PluginProvider, serve};
 use tokio::io::{duplex, split};
@@ -207,7 +208,7 @@ fn collecting_sink(output: Arc<Mutex<Vec<u8>>>) -> LogSink {
 }
 
 async fn wait_for_snapshot(
-    snapshots: &dyn sandbox_driver::SnapshotProvider,
+    snapshots: &dyn legacy::SnapshotProvider,
     id: &sandbox_driver::SnapshotId,
 ) -> Result<(), String> {
     for _ in 0..120 {

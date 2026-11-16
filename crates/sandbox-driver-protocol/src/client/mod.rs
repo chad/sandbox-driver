@@ -15,7 +15,8 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, EventContext, EventSubject, ExecControls, Result, SandboxId, StopLevel, TransportError,
 };
 use serde::Serialize;
@@ -107,7 +108,7 @@ impl From<Error> for Failure {
 
 struct DeliveredEvent {
     context: EventContext,
-    event:   sandbox_driver::Event,
+    event:   legacy::Event,
     _bytes:  OwnedSemaphorePermit,
 }
 
@@ -712,7 +713,7 @@ mod tests {
     use std::future;
     use std::process::{self, Stdio};
 
-    use sandbox_driver::{
+    use sandbox_driver::legacy::{
         Capabilities, ExecResult, ExecStreamingResult, ProviderKind, SandboxFilter,
         SandboxProvider, Termination,
     };

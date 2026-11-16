@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{env, process};
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capability, Error, ExecSpec, Git, GitCloneOptions, GitCredentials, GitFailureKind, Sandbox,
     SandboxKind, SandboxProvider, SandboxSource, SandboxSpec, SnapshotId,
 };

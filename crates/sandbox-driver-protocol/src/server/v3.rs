@@ -1,4 +1,5 @@
-//! Plugin side of protocol version 3: serves a `contract::ProviderFactory`.
+//! Plugin side of protocol version 3: serves a
+//! `sandbox_driver::ProviderFactory`.
 //!
 //! `initialize` activates the plugin's own factory with the entry's config and
 //! the secrets named by the host, read from this process's environment. Every
@@ -8,12 +9,11 @@ use std::collections::BTreeMap;
 use std::env;
 use std::sync::Arc;
 
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Activation, ByteStream, Error, ExecControls, MutationOutcome, OutputSink, OutputStream,
-    ProviderEntry, ProviderFactory, ProviderRuntime, ProviderSchemas, Sandbox, SecretValues,
-    TerminalSize, WorkloadAdmission,
+    Provider, ProviderEntry, ProviderFactory, ProviderSchemas, Sandbox, SandboxId, SecretValues,
+    StopLevel, TerminalSize, WorkloadAdmission, legacy,
 };
-use sandbox_driver::{SandboxId, StopLevel};
 use serde_json::Value;
 use tokio::io::AsyncReadExt;
 use tokio::sync::{Mutex as AsyncMutex, OnceCell, OwnedSemaphorePermit, watch};
@@ -43,7 +43,7 @@ struct ExecHandle {
 pub(crate) struct V3State {
     schemas:   ProviderSchemas,
     factory:   Arc<dyn ProviderFactory>,
-    runtime:   OnceCell<Arc<dyn ProviderRuntime>>,
+    runtime:   OnceCell<Arc<dyn Provider>>,
     sandboxes: Registry<Arc<dyn Sandbox>>,
     execs:     Registry<ExecHandle>,
     closing:   CancellationToken,
@@ -61,7 +61,7 @@ impl V3State {
         }
     }
 
-    fn runtime(&self) -> Result<&Arc<dyn ProviderRuntime>, Error> {
+    fn runtime(&self) -> Result<&Arc<dyn Provider>, Error> {
         self.runtime.get().ok_or_else(|| Error::Unavailable {
             message: "the plugin has not been initialized".into(),
             outcome: MutationOutcome::NotStarted,
@@ -311,7 +311,7 @@ async fn open(
         })
 }
 
-fn transport(error: &sandbox_driver::Error) -> Error {
+fn transport(error: &legacy::Error) -> Error {
     Error::Transport {
         message: error.to_string(),
         outcome: MutationOutcome::Unknown,

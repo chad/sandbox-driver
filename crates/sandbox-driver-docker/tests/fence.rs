@@ -10,7 +10,8 @@ use bollard::Docker;
 use bollard::container::{
     Config, CreateContainerOptions, ListContainersOptions, RemoveContainerOptions, TopOptions,
 };
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, ExecControls, ExecSpec, OneShotSpec, SandboxProvider, SandboxSource, SandboxSpec,
     Termination,
 };
@@ -22,7 +23,7 @@ use tokio::time::{sleep, timeout};
 const IMAGE: &str = "ghcr.io/fabro-sh/dhi-alpine-base:3.23-dev-2026-06-17";
 
 #[track_caller]
-fn assert_busy<T>(result: sandbox_driver::Result<T>) {
+fn assert_busy<T>(result: legacy::Result<T>) {
     assert!(
         matches!(&result, Err(Error::Provider(error)) if error.code.as_deref() == Some("busy")),
         "expected busy, got {:?}",
