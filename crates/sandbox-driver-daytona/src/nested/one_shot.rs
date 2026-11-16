@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, ExecControls, ExecResult, ExecStreamingResult, OneShot, OneShotImage, OneShotSpec,
     OutputSink, Result, StopLevel, Termination, drain_with_stops, stop_signal,
 };

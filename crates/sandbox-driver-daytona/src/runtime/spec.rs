@@ -14,7 +14,7 @@ use std::time::Duration;
 use sandbox_driver::contract::{
     ContainerSpec, Error, NetworkPolicy, Resources, SandboxSpec, ServiceSpec, Source,
 };
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     BASH_ENV_VAR, LifecycleTimers, NetworkPolicy as LegacyNetwork, Resources as LegacyResources,
     SandboxKind, SandboxSource, SandboxSpec as LegacySpec,
 };

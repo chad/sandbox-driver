@@ -13,7 +13,7 @@ use sandbox_driver::contract::{
     ProviderEntry, ProviderFactory, ProviderRuntime, ProviderSchemas, Sandbox, SecretValues,
     TerminalSize, WorkloadAdmission,
 };
-use sandbox_driver::{SandboxId, StopLevel};
+use sandbox_driver::{SandboxId, StopLevel, legacy};
 use serde_json::Value;
 use tokio::io::AsyncReadExt;
 use tokio::sync::{Mutex as AsyncMutex, OnceCell, OwnedSemaphorePermit, watch};
@@ -311,7 +311,7 @@ async fn open(
         })
 }
 
-fn transport(error: &sandbox_driver::Error) -> Error {
+fn transport(error: &legacy::Error) -> Error {
     Error::Transport {
         message: error.to_string(),
         outcome: MutationOutcome::Unknown,

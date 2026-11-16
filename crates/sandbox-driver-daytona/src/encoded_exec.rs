@@ -15,7 +15,7 @@
 use std::result::Result as StdResult;
 use std::sync::Arc;
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Exec, ExecControls, ExecSpec, ExecStreamingResult, OutputCaptureBuffer, OutputLoss,
     OutputSanitization, OutputSanitizer, OutputSink, OutputStream, Result,
 };
@@ -391,7 +391,7 @@ mod tests {
     use std::process::{Command, Stdio};
     use std::time::Duration;
 
-    use sandbox_driver::{ExecResult, Termination};
+    use sandbox_driver::legacy::{ExecResult, Termination};
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
     use tokio::process::Command as TokioCommand;
     use tokio::task::spawn_blocking;

@@ -7,7 +7,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     BASH_ENV_VAR, ExecSpec, Sandbox, SandboxProvider, SandboxSource, SandboxSpec, SpawnSpec,
 };
 use sandbox_driver_docker::DockerProvider;
@@ -78,7 +79,7 @@ async fn attached_handles_reapply_the_configured_env_like_created_ones() {
             .await
             .expect("read stdio stdout");
         let (termination, code) = process.handle.wait().await;
-        assert_eq!(termination, sandbox_driver::Termination::Exited);
+        assert_eq!(termination, legacy::Termination::Exited);
         assert_eq!(code, Some(0));
         assert_eq!(stdout, "x\n", "{how} handle: stdio reapplies IFS too");
     }

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capability, EventContext, SandboxProvider, SandboxState, WaitOptions, wait_for_stable_state,
     wait_for_state,
 };

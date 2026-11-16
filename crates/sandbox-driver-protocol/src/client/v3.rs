@@ -23,7 +23,8 @@ use sandbox_driver::contract::{
     ProviderName, ProviderRuntime, ProviderSchemas, Sandbox, SandboxRef, SandboxSummary, Status,
     TerminalSize, WorkloadAdmission,
 };
-use sandbox_driver::{SandboxId, StopLevel, TransportError};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{SandboxId, StopLevel, TransportError};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -540,7 +541,7 @@ async fn exec(
                     FrameKind::Stderr => OutputStream::Stderr,
                     FrameKind::Eof => break,
                     _ => {
-                        return Err(Failure::Local(sandbox_driver::Error::Transport(
+                        return Err(Failure::Local(legacy::Error::Transport(
                             TransportError::new("unexpected frame on exec output"),
                         )));
                     }
@@ -570,7 +571,7 @@ async fn exec(
     let call = async {
         let value = client.request(w::EXEC, &params).await?;
         serde_json::from_value::<ExecOutcome>(value).map_err(|_| {
-            Failure::Local(sandbox_driver::Error::Transport(TransportError::new(
+            Failure::Local(legacy::Error::Transport(TransportError::new(
                 "the plugin returned an invalid exec outcome",
             )))
         })
@@ -718,7 +719,7 @@ impl Files for PluginFiles {
                             }
                             FrameKind::Eof => break,
                             _ => {
-                                return Err(Failure::Local(sandbox_driver::Error::Transport(
+                                return Err(Failure::Local(legacy::Error::Transport(
                                     TransportError::new("unexpected frame on file output"),
                                 )));
                             }
@@ -768,7 +769,7 @@ impl Files for PluginFiles {
             let mut buffer = vec![0; 64 * 1024];
             loop {
                 let count = bytes.read(&mut buffer).await.map_err(|error| {
-                    Failure::Local(sandbox_driver::Error::io("reading the upload", error))
+                    Failure::Local(legacy::Error::io("reading the upload", error))
                 })?;
                 if count == 0 {
                     break;

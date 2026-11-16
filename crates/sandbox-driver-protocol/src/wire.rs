@@ -11,7 +11,8 @@ use std::{error, fmt, io};
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Action, AuthError, Capability, Error, ErrorReport, ExecFailure, GitFailure, GitFailureKind,
     ProviderError, ProviderKind, ResourceKind, SandboxState, Termination, TransportError,
 };
@@ -201,7 +202,7 @@ struct LimitDetail {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct IncompleteDetail {
-    incomplete: sandbox_driver::IncompleteOperation,
+    incomplete: legacy::IncompleteOperation,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -589,7 +590,7 @@ mod tests {
         assert!(
             matches!(WireError::from_error(&overloaded).into_error(), Error::Overloaded { limit } if limit == "active_io")
         );
-        let incomplete = sandbox_driver::IncompleteOperation::new("hard cancellation drain");
+        let incomplete = legacy::IncompleteOperation::new("hard cancellation drain");
         let Error::Incomplete(back) =
             WireError::from_error(&Error::Incomplete(incomplete)).into_error()
         else {

@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, IncompleteOperation, Pty, PtyOptions, PtySession, PtySize, Result, SandboxId,
 };
 use tokio::net::unix::{OwnedReadHalf, OwnedWriteHalf};

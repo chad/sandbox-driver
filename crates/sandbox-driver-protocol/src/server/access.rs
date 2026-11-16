@@ -4,7 +4,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{Capability, Error, Git};
+use sandbox_driver::legacy::{Capability, Error, Git};
 use serde_json::Value;
 
 use super::{DispatchError, ServerState, parse, to_value};

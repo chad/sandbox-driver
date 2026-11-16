@@ -10,7 +10,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     ExecControls, ExecSpec, OutputStream, SandboxProvider, SandboxSource, SandboxSpec,
 };
 use sandbox_driver_host::HostProvider;
@@ -84,7 +85,7 @@ fn expected() -> Vec<u8> {
 
 /// Runs `seq 1 20000` with a sink shaped like Petri's: each chunk is written
 /// into a 64 KiB pipe whose reader yields and stalls between reads.
-async fn stream_lines(sandbox: &Arc<dyn sandbox_driver::Sandbox>) -> (Vec<u8>, bool) {
+async fn stream_lines(sandbox: &Arc<dyn legacy::Sandbox>) -> (Vec<u8>, bool) {
     let (writer, mut reader) = duplex(64 * 1024);
     let collected = Arc::new(Mutex::new(Vec::new()));
     let sink_collected = Arc::clone(&collected);
@@ -120,7 +121,7 @@ async fn stream_lines(sandbox: &Arc<dyn sandbox_driver::Sandbox>) -> (Vec<u8>, b
                     writer
                         .write_all(&chunk)
                         .await
-                        .map_err(|error| sandbox_driver::Error::io("sink write", error))?;
+                        .map_err(|error| legacy::Error::io("sink write", error))?;
                 }
                 Ok(())
             })

@@ -7,7 +7,8 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Capabilities, Capability, DirEntry, Error, Exec, ExecControls, ExecResult, ExecSpec,
     ExecStreamingResult, FileKind, FileMetadata, Filesystem, Isolation, PlatformInfo, Result,
     Sandbox, SandboxId, SandboxState, SandboxStatus, Termination, WaitOptions, activate,
@@ -202,7 +203,7 @@ async fn wait_for_state_times_out_with_a_typed_error() {
 async fn spawn_stdio_defaults_to_unsupported() {
     let exec = StubExec;
     let error = exec
-        .spawn_stdio(&sandbox_driver::SpawnSpec::new("cat"))
+        .spawn_stdio(&legacy::SpawnSpec::new("cat"))
         .await
         .expect_err("stdio is unsupported");
     assert!(matches!(error, Error::Unsupported {

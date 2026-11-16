@@ -3,7 +3,8 @@
 
 use std::sync::Arc;
 
-use sandbox_driver::{Capability, Error, Result, StderrTail, StdioProcessHandle};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{Capability, Error, Result, StderrTail, StdioProcessHandle};
 use serde_json::Value;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::OwnedSemaphorePermit;
@@ -21,7 +22,7 @@ pub(super) struct ServerStdio {
 }
 
 pub(super) struct ServerPty {
-    pub(super) session: Arc<dyn sandbox_driver::PtySession>,
+    pub(super) session: Arc<dyn legacy::PtySession>,
     _permit:            Option<Arc<OwnedSemaphorePermit>>,
 }
 
@@ -32,7 +33,7 @@ fn stdio(state: &ServerState, id: &str) -> Result<Arc<ServerStdio>> {
         .ok_or_else(|| Error::invalid_spec("process_id", "unknown stdio process id"))
 }
 
-fn pty(state: &ServerState, id: &str) -> Result<Arc<dyn sandbox_driver::PtySession>> {
+fn pty(state: &ServerState, id: &str) -> Result<Arc<dyn legacy::PtySession>> {
     state
         .ptys
         .get(id)
@@ -133,7 +134,7 @@ pub(super) async fn dispatch(
                 .ok_or_else(|| Error::unsupported(Capability::Pty))?
                 .open(&request.options)
                 .await?;
-            let pty: Arc<dyn sandbox_driver::PtySession> = Arc::from(pty);
+            let pty: Arc<dyn legacy::PtySession> = Arc::from(pty);
             let registered = state.ptys.try_insert(
                 request.pty_id.clone(),
                 Arc::new(ServerPty {

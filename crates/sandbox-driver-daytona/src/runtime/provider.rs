@@ -14,7 +14,8 @@ use sandbox_driver::contract::{
     ResourceCapability, Sandbox, SandboxRef, SandboxSummary, SourceKind, TimerCapability,
     WorkloadAdmission,
 };
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     EventEmitter, HealthStatus, Isolation, SandboxId, SandboxProvider as _,
     SandboxState as LegacyState,
 };
@@ -174,7 +175,7 @@ impl DaytonaRuntime {
 }
 
 fn handle_id(handle: &DaytonaSandbox) -> SandboxId {
-    sandbox_driver::Sandbox::id(handle).clone()
+    legacy::Sandbox::id(handle).clone()
 }
 
 /// The API key's own organization, which is where its sandboxes live, or
@@ -785,7 +786,7 @@ mod tests {
             .attach(&reference("sb-1"))
             .await
             .expect("attach");
-        let limit = sandbox_driver::DEFAULT_BUFFER_BYTES as u64;
+        let limit = legacy::DEFAULT_BUFFER_BYTES as u64;
         let refused = sandbox
             .files()
             .put("big.bin", Box::pin(repeat(7).take(limit + 1)))

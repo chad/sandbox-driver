@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use anyhow::{Context as _, Result, bail};
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capabilities, Capability, Event, EventBody, EventContext, EventObserver, HealthStatus,
     ProviderHealth, SandboxStatus,
 };

@@ -10,7 +10,7 @@ use sandbox_driver::contract::{
     Activation, Descriptor, Error, Health, LabelFilter, PluginLocation, ProviderFactory,
     ProviderRuntime, ProviderSchemas, Sandbox, SandboxSummary, WorkloadAdmission,
 };
-use sandbox_driver::{ProviderKind, SandboxId};
+use sandbox_driver::{ProviderKind, SandboxId, legacy};
 use sandbox_driver_protocol::{Plugin, run_plugin};
 
 /// Serves `factory` over protocol version 3, reporting `kind` in place of
@@ -19,7 +19,7 @@ pub async fn serve_renamed(
     kind: &str,
     schemas: ProviderSchemas,
     factory: Arc<dyn ProviderFactory>,
-) -> sandbox_driver::Result<()> {
+) -> legacy::Result<()> {
     let schemas = ProviderSchemas {
         kind: ProviderKind::try_new(kind).expect("valid kind"),
         ..schemas

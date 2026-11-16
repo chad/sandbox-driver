@@ -25,7 +25,7 @@ use tokio::sync::{Mutex, RwLock, RwLockReadGuard};
 use tokio::time;
 use tokio_util::sync::CancellationToken;
 
-use crate::fs;
+use crate::path;
 
 static NEXT_NAMESPACE: AtomicU64 = AtomicU64::new(1);
 
@@ -361,7 +361,10 @@ impl Handle {
                 message: "requires a non-empty NUL-free workload path".into(),
             });
         }
-        Ok(fs::resolve(&self.record.directory.to_string_lossy(), path))
+        Ok(path::resolve(
+            &self.record.directory.to_string_lossy(),
+            path,
+        ))
     }
     async fn log(&self, operation: &str) {
         self.fake

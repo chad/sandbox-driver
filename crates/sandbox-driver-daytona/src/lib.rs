@@ -31,8 +31,8 @@
 //! worktree and remote operations use the shared exec-derived implementation.
 //! Daytona derives Search and background-service management through exec.
 //! Snapshots used with these facets must therefore provide the commands
-//! documented by [`sandbox_driver::Search`] and [`sandbox_driver::Services`],
-//! plus `git`, on `PATH`.
+//! documented by [`sandbox_driver::legacy::Search`] and
+//! [`sandbox_driver::legacy::Services`], plus `git`, on `PATH`.
 //! Resize remains in the normalized interface, but the current hosted
 //! Daytona API and official SDK do not expose a working resize route, so
 //! this provider does not declare it.
@@ -44,10 +44,11 @@
 //! request only while Daytona rejects it for an in-progress state change, and
 //! waits, within a five-minute cleanup deadline, for removal to be confirmed.
 //! An accepted delete or a `destroying` status alone does not confirm cleanup.
-//! Unconfirmed cleanup returns a legacy [`sandbox_driver::ProviderError`] with
-//! code `incomplete_cleanup`, the known sandbox ID in `detail.remaining`, and
-//! the cleanup diagnostic in `detail.cleanup`; the original creation failure
-//! stays in its source chain. This is not permission to replay the create.
+//! Unconfirmed cleanup returns a legacy
+//! [`sandbox_driver::legacy::ProviderError`] with code `incomplete_cleanup`,
+//! the known sandbox ID in `detail.remaining`, and the cleanup diagnostic in
+//! `detail.cleanup`; the original creation failure stays in its source chain.
+//! This is not permission to replay the create.
 //!
 //! # Lifecycle timers
 //!

@@ -17,7 +17,7 @@ use sandbox_driver::contract::{
     ContainerSpec, Error, NetworkPolicy, ReadinessCheck, SandboxSpec, SecretValues, ServiceSpec,
     Source,
 };
-use sandbox_driver::{self as legacy, SandboxSource};
+use sandbox_driver::legacy::{self, SandboxSource};
 use sandbox_driver_docker_config::{BindMount, DockerProviderConfig, RegistryAuth, Sidecar};
 use serde::Deserialize;
 

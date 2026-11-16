@@ -8,6 +8,7 @@ use sandbox_driver::contract::{
     NetworkPolicy, PluginTrust, PortSupport, ProviderEntry, ProviderSchemas, Resources, SandboxRef,
     SandboxSpec, SandboxState, Source, Status, TimerCapability,
 };
+use sandbox_driver::legacy;
 use serde_json::{Value, json};
 
 fn reference() -> SandboxRef {
@@ -553,7 +554,7 @@ fn debug_output_redacts_launch_and_workload_secrets() {
 
 #[test]
 fn legacy_and_contract_image_sources_are_not_interchangeable() {
-    let old: sandbox_driver::SandboxSpec = serde_json::from_value(json!({
+    let old: legacy::SandboxSpec = serde_json::from_value(json!({
         "source": {"image": {"reference": "ubuntu:24.04"}},
         "provider_config": {"sidecars": []}
     }))
@@ -566,5 +567,5 @@ fn legacy_and_contract_image_sources_are_not_interchangeable() {
     assert!(!error.to_string().contains("unknown field"), "{error}");
     let contract_source = json!({"source": {"image": "ubuntu:24.04"}});
     serde_json::from_value::<SandboxSpec>(contract_source.clone()).expect("contract source");
-    assert!(serde_json::from_value::<sandbox_driver::SandboxSpec>(contract_source).is_err());
+    assert!(serde_json::from_value::<legacy::SandboxSpec>(contract_source).is_err());
 }

@@ -6,7 +6,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{ExecSpec, SandboxProvider, SandboxSource, SandboxSpec, SpawnSpec};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{ExecSpec, SandboxProvider, SandboxSource, SandboxSpec, SpawnSpec};
 use sandbox_driver_docker::DockerProvider;
 
 const TEST_IMAGE: &str = "ghcr.io/lithoscomputer/ubuntu-24.04:slim-df708f910111";
@@ -30,7 +31,7 @@ async fn late_terminate_leaves_no_stray_stop_file() {
         .await
         .expect("spawn");
     let (termination, _code) = process.handle.wait().await;
-    assert_eq!(termination, sandbox_driver::Termination::Exited);
+    assert_eq!(termination, legacy::Termination::Exited);
 
     // A supervisor that always terminates during cleanup must not
     // accumulate stop files for processes that already exited.

@@ -37,9 +37,9 @@ use sandbox_driver::contract::{
     SandboxRef, SandboxState, SandboxSummary, ServiceAddress, SourceKind, Status, Termination,
     WorkloadAdmission,
 };
-use sandbox_driver::{
-    self as legacy, Exec, ExecStreamingResult, Isolation, OneShot, PreviewUrls, SandboxId,
-    SandboxProvider, ShellCommand, StdinSource,
+use sandbox_driver::legacy::{
+    self, Exec, ExecStreamingResult, Isolation, OneShot, PreviewUrls, SandboxId, SandboxProvider,
+    ShellCommand, StdinSource,
 };
 use serde::Deserialize;
 use tokio::time;

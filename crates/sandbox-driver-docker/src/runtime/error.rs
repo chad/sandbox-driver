@@ -6,7 +6,7 @@
 //! outcome, so a caller never reads an uncertain mutation as refused or done.
 
 use sandbox_driver::contract::{Error as ContractError, MutationOutcome, RemainingResource};
-use sandbox_driver::{Error, ProviderError};
+use sandbox_driver::legacy::{Error, ProviderError};
 
 use crate::fence;
 
@@ -101,7 +101,7 @@ mod tests {
     use std::io;
 
     use bollard::errors::Error as DockerApiError;
-    use sandbox_driver::{ResourceKind, TransportError};
+    use sandbox_driver::legacy::{ResourceKind, TransportError};
     use serde_json::json;
 
     use super::*;

@@ -21,7 +21,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, Exec, ExecSpec, PreviewUrl, PreviewUrls, ProviderError, Result, SpawnSpec, StdioProcess,
 };
 use tokio::io::{AsyncWriteExt, copy};

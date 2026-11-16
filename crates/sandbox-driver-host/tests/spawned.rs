@@ -7,8 +7,9 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{SandboxProvider, SandboxSource, SandboxSpec};
-use sandbox_driver_conformance::{Conformance, SpecFactory};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{SandboxProvider, SandboxSource, SandboxSpec};
+use sandbox_driver_conformance::legacy::{Conformance, SpecFactory};
 use sandbox_driver_protocol::PluginProvider;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
@@ -77,9 +78,7 @@ async fn plugin_process_exit_fails_pending_calls() {
     // Shut the plugin down, then observe that further calls fail rather
     // than hang.
     provider.shutdown().await.expect("shutdown succeeds");
-    let outcome = provider
-        .list(&sandbox_driver::SandboxFilter::default())
-        .await;
+    let outcome = provider.list(&legacy::SandboxFilter::default()).await;
     assert!(
         outcome.is_err(),
         "calls after plugin exit must fail, not hang"

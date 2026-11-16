@@ -11,7 +11,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use nix::errno::Errno;
 use nix::sys::signal::kill;
 use nix::unistd::Pid;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, ExecSpec, SandboxFilter, SandboxId, SandboxProvider, SandboxSource, SandboxSpec,
 };
 use sandbox_driver_protocol::channel::TrustedPeer;

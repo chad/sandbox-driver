@@ -4,7 +4,7 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use async_trait::async_trait;
 use daytona_sdk::{FileSystemService, SetFilePermissionsOptions};
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     BoundedBuffer, DEFAULT_BUFFER_BYTES, DirEntry, Error, FileKind, FileMetadata, Filesystem,
     ResourceKind, Result,
 };

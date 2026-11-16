@@ -12,7 +12,7 @@ use bollard::errors::Error as DockerApiError;
 use bollard::exec::{CreateExecOptions, StartExecOptions, StartExecResults};
 use bollard::models::{ContainerInspectResponse, ExecInspectResponse};
 use futures_util::Stream;
-use sandbox_driver::{Error, ProviderError, ResourceKind, Result};
+use sandbox_driver::legacy::{Error, ProviderError, ResourceKind, Result};
 use tokio::io::AsyncWrite;
 
 use crate::daemon::{docker_error, docker_kind, is_not_found};

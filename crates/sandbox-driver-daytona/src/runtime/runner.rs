@@ -16,7 +16,8 @@ use futures_util::future;
 use sandbox_driver::contract::{
     ContainerSpec, Error, ReadinessCheck, SecretValues, ServiceAddress, ServiceSpec,
 };
-use sandbox_driver::{Result as LegacyResult, Sandbox as _};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{Result as LegacyResult, Sandbox as _};
 use sandbox_driver_docker_config::RegistryAuth;
 use tokio::time;
 
@@ -98,13 +99,13 @@ pub(super) async fn provision(
     let docker = handle
         .nested
         .as_ref()
-        .ok_or_else(|| sandbox_driver::Error::invalid_spec("recipe", "runner has no Docker"))?;
+        .ok_or_else(|| legacy::Error::invalid_spec("recipe", "runner has no Docker"))?;
     docker
         .provision_with(provision_containers(docker.cli(), &nested, &auth))
         .await?;
     // Provisioning pulls images; the requested egress policy applies to
     // everything that runs afterwards.
-    if nested.network != sandbox_driver::NetworkPolicy::ProviderDefault {
+    if nested.network != legacy::NetworkPolicy::ProviderDefault {
         handle.update_network(&nested.network).await?;
     }
     Ok(())
@@ -150,16 +151,16 @@ async fn provision_containers(
 
 /// A readiness failure crosses the legacy create (and its cleanup) as a
 /// provider error the classifier reads back as `Unhealthy`.
-fn unready(error: &Error) -> sandbox_driver::Error {
+fn unready(error: &Error) -> legacy::Error {
     let kind = super::DaytonaFactory::kind();
     // Carry the bare message; the classifier wraps it as `Unhealthy` once.
     let message = match error {
         Error::Unhealthy { message } => message.clone(),
         error => error.to_string(),
     };
-    let mut provider = sandbox_driver::ProviderError::new(kind, message);
+    let mut provider = legacy::ProviderError::new(kind, message);
     provider.code = Some(UNHEALTHY_CODE.to_owned());
-    sandbox_driver::Error::Provider(provider)
+    legacy::Error::Provider(provider)
 }
 
 async fn prepare_workload_image(cli: &DockerCli, image: &WorkloadImage) -> LegacyResult<()> {
@@ -191,9 +192,8 @@ fn service_args(name: &str, service: &ServiceSpec) -> LegacyResult<Vec<String>> 
         .collect::<Vec<_>>()
         .join(",");
     let ready = match &service.ready {
-        Some(check) => serde_json::to_string(check).map_err(|error| {
-            sandbox_driver::Error::invalid_spec("services.ready", error.to_string())
-        })?,
+        Some(check) => serde_json::to_string(check)
+            .map_err(|error| legacy::Error::invalid_spec("services.ready", error.to_string()))?,
         None => String::new(),
     };
     let mut args = words([

@@ -3,7 +3,10 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
-use sandbox_driver::{DirEntry, Error, FileKind, FileMetadata, Filesystem, ResourceKind, Result};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
+    DirEntry, Error, FileKind, FileMetadata, Filesystem, ResourceKind, Result,
+};
 use tokio::fs;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, BufReader, copy, copy_buf};
 
@@ -77,7 +80,7 @@ impl Filesystem for HostFs {
         let mut file = fs::File::open(&full)
             .await
             .map_err(read_error(path, &full))?;
-        let mut bytes = sandbox_driver::BoundedBuffer::new(sandbox_driver::DEFAULT_BUFFER_BYTES);
+        let mut bytes = legacy::BoundedBuffer::new(legacy::DEFAULT_BUFFER_BYTES);
         let outcome = copy(&mut file, &mut bytes)
             .await
             .map(|_| ())
@@ -114,7 +117,7 @@ impl Filesystem for HostFs {
         file.seek(io::SeekFrom::Start(offset))
             .await
             .map_err(read_error(path, &full))?;
-        let mut bytes = sandbox_driver::BoundedBuffer::new(sandbox_driver::DEFAULT_BUFFER_BYTES);
+        let mut bytes = legacy::BoundedBuffer::new(legacy::DEFAULT_BUFFER_BYTES);
         let outcome = copy(&mut file.take(length.unwrap_or(u64::MAX)), &mut bytes)
             .await
             .map(|_| ())
@@ -316,7 +319,7 @@ impl Filesystem for HostFs {
         {
             let _ = (full, mode);
             Err(Error::unsupported(
-                sandbox_driver::Capability::FsPermissions,
+                sandbox_driver::legacy::Capability::FsPermissions,
             ))
         }
     }

@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use bollard::Docker;
 use sandbox_driver::contract::Error as ContractError;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, Sandbox, SandboxFilter, SandboxId, SandboxProvider, SandboxSource, SandboxSpec,
 };
 use sandbox_driver_docker::DockerProvider;
@@ -579,7 +580,7 @@ async fn unknown_exec_admission_retains_the_fence_without_replaying() {
     let sandbox = daemon.attach_main().await;
     let error = sandbox
         .exec()
-        .run(&sandbox_driver::ExecSpec::new("true"))
+        .run(&legacy::ExecSpec::new("true"))
         .await
         .expect_err("unknown exec ID");
     let Error::Provider(error) = error else {
@@ -1269,8 +1270,8 @@ async fn one_shot_admission_retains_uncertain_cleanup_without_replaying_it() {
             .one_shot()
             .expect("workspace one-shot")
             .run(
-                &sandbox_driver::OneShotSpec::registry("test-image"),
-                sandbox_driver::ExecControls::buffered(),
+                &legacy::OneShotSpec::registry("test-image"),
+                legacy::ExecControls::buffered(),
             )
             .await
             .expect_err("admission refused");

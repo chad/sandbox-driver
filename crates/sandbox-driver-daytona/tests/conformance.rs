@@ -8,8 +8,8 @@ use std::env;
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{SandboxKind, SandboxSource, SandboxSpec, SnapshotId};
-use sandbox_driver_conformance::{Conformance, SpecFactory};
+use sandbox_driver::legacy::{SandboxKind, SandboxSource, SandboxSpec, SnapshotId};
+use sandbox_driver_conformance::legacy::{Conformance, SpecFactory};
 use sandbox_driver_daytona::DaytonaProvider;
 
 mod support;

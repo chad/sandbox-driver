@@ -6,7 +6,7 @@ use std::future::Future;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capability, Error, ExecControls, ExecStreamingResult, LogSink, OutputSink, OutputStream,
     Result, StdinSource, StopLevel,
 };

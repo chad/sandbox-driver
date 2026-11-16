@@ -4,7 +4,7 @@
 use bollard::Docker;
 use bollard::image::CreateImageOptions;
 use futures_util::StreamExt;
-use sandbox_driver::Result;
+use sandbox_driver::legacy::Result;
 
 use crate::config::{RegistryAuth, to_credentials};
 use crate::daemon::{docker_error, is_not_found};

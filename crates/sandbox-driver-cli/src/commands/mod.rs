@@ -7,7 +7,8 @@ mod spec;
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Capability, EventContext, ProviderKind, Sandbox, SandboxFilter, SandboxId, SandboxProvider,
     WaitOptions, wait_for_stable_state,
 };
@@ -262,7 +263,7 @@ async fn execute_sandbox(
         SandboxCommand::Shell(args) => {
             require_raw_output(output, "sandbox shell")?;
             let sandbox = attach(provider, &args.id, event_context).await?;
-            sandbox_driver::activate(sandbox.as_ref(), &WaitOptions::default()).await?;
+            legacy::activate(sandbox.as_ref(), &WaitOptions::default()).await?;
             execute_shell(sandbox.as_ref()).await
         }
         SandboxCommand::Fs { command } => {
@@ -300,7 +301,7 @@ async fn act_on_sandbox(
     output: OutputFormat,
     capability: Capability,
     verb: &str,
-    act: impl AsyncFnOnce(&dyn Sandbox) -> sandbox_driver::Result<()>,
+    act: impl AsyncFnOnce(&dyn Sandbox) -> legacy::Result<()>,
 ) -> Result<u8> {
     let sandbox = attach(provider, id, events).await?;
     require_capability(provider, sandbox.as_ref(), capability)?;

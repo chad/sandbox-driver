@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use sandbox_driver::{Sandbox, SandboxSpec, SandboxStatus};
+use sandbox_driver::legacy::{Sandbox, SandboxSpec, SandboxStatus};
 use serde_json::Value;
 
 use super::{DispatchError, ServerState, parse, sandbox_id, to_value};

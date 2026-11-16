@@ -10,7 +10,8 @@ use std::time::{Duration, Instant};
 use std::{future, io, mem, process};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Action, Capabilities, Capability, CorrelationId, DerivedGit, Error, Event, EventBody,
     EventContext, EventEmitter, EventObserver, EventSubject, ExecControls, ExecSpec, ForkOptions,
     Git, GitCloneOptions, GitCommitOptions, GitFailureKind, LogSink, LogSource, Logs, LogsCaps,
@@ -633,7 +634,7 @@ impl Sandbox for NativeGitSandbox {
         self.inner.working_directory()
     }
 
-    async fn platform_info(&self) -> Result<sandbox_driver::PlatformInfo> {
+    async fn platform_info(&self) -> Result<legacy::PlatformInfo> {
         self.inner.platform_info().await
     }
 
@@ -649,11 +650,11 @@ impl Sandbox for NativeGitSandbox {
         self.inner.delete().await
     }
 
-    fn exec(&self) -> &dyn sandbox_driver::Exec {
+    fn exec(&self) -> &dyn legacy::Exec {
         self.inner.exec()
     }
 
-    fn fs(&self) -> &dyn sandbox_driver::Filesystem {
+    fn fs(&self) -> &dyn legacy::Filesystem {
         self.inner.fs()
     }
 
@@ -680,7 +681,7 @@ impl Git for RecordingGit {
             .await
     }
 
-    async fn status(&self, repo_path: &str) -> Result<sandbox_driver::GitStatus> {
+    async fn status(&self, repo_path: &str) -> Result<legacy::GitStatus> {
         DerivedGit::new(self.inner.exec()).status(repo_path).await
     }
 
@@ -696,7 +697,7 @@ impl Git for RecordingGit {
             .await
     }
 
-    async fn push(&self, repo_path: &str, options: &sandbox_driver::GitPushOptions) -> Result<()> {
+    async fn push(&self, repo_path: &str, options: &legacy::GitPushOptions) -> Result<()> {
         DerivedGit::new(self.inner.exec())
             .push(repo_path, options)
             .await
@@ -705,22 +706,18 @@ impl Git for RecordingGit {
     async fn pull(
         &self,
         repo_path: &str,
-        credentials: Option<&sandbox_driver::GitCredentials>,
+        credentials: Option<&legacy::GitCredentials>,
     ) -> Result<()> {
         DerivedGit::new(self.inner.exec())
             .pull(repo_path, credentials)
             .await
     }
 
-    async fn branches(&self, repo_path: &str) -> Result<sandbox_driver::GitBranches> {
+    async fn branches(&self, repo_path: &str) -> Result<legacy::GitBranches> {
         DerivedGit::new(self.inner.exec()).branches(repo_path).await
     }
 
-    async fn checkout(
-        &self,
-        repo_path: &str,
-        options: &sandbox_driver::GitCheckoutOptions,
-    ) -> Result<()> {
+    async fn checkout(&self, repo_path: &str, options: &legacy::GitCheckoutOptions) -> Result<()> {
         DerivedGit::new(self.inner.exec())
             .checkout(repo_path, options)
             .await
@@ -729,18 +726,14 @@ impl Git for RecordingGit {
     async fn set_ambient_credentials(
         &self,
         repo_path: &str,
-        credentials: Option<&sandbox_driver::GitCredentials>,
+        credentials: Option<&legacy::GitCredentials>,
     ) -> Result<()> {
         DerivedGit::new(self.inner.exec())
             .set_ambient_credentials(repo_path, credentials)
             .await
     }
 
-    async fn fetch(
-        &self,
-        repo_path: &str,
-        options: &sandbox_driver::GitFetchOptions,
-    ) -> Result<()> {
+    async fn fetch(&self, repo_path: &str, options: &legacy::GitFetchOptions) -> Result<()> {
         DerivedGit::new(self.inner.exec())
             .fetch(repo_path, options)
             .await
@@ -761,8 +754,8 @@ impl Git for RecordingGit {
     async fn diff_entries(
         &self,
         repo_path: &str,
-        options: &sandbox_driver::GitDiffOptions,
-    ) -> Result<Vec<sandbox_driver::GitDiffEntry>> {
+        options: &legacy::GitDiffOptions,
+    ) -> Result<Vec<legacy::GitDiffEntry>> {
         DerivedGit::new(self.inner.exec())
             .diff_entries(repo_path, options)
             .await
@@ -771,8 +764,8 @@ impl Git for RecordingGit {
     async fn diff_numstat(
         &self,
         repo_path: &str,
-        options: &sandbox_driver::GitDiffOptions,
-    ) -> Result<Vec<sandbox_driver::GitNumstat>> {
+        options: &legacy::GitDiffOptions,
+    ) -> Result<Vec<legacy::GitNumstat>> {
         DerivedGit::new(self.inner.exec())
             .diff_numstat(repo_path, options)
             .await
@@ -781,7 +774,7 @@ impl Git for RecordingGit {
     async fn diff_patch(
         &self,
         repo_path: &str,
-        options: &sandbox_driver::GitDiffOptions,
+        options: &legacy::GitDiffOptions,
     ) -> Result<String> {
         DerivedGit::new(self.inner.exec())
             .diff_patch(repo_path, options)
@@ -791,8 +784,8 @@ impl Git for RecordingGit {
     async fn log(
         &self,
         repo_path: &str,
-        options: &sandbox_driver::GitLogOptions,
-    ) -> Result<Vec<sandbox_driver::GitCommit>> {
+        options: &legacy::GitLogOptions,
+    ) -> Result<Vec<legacy::GitCommit>> {
         DerivedGit::new(self.inner.exec())
             .log(repo_path, options)
             .await
@@ -877,7 +870,7 @@ async fn native_git_clone_is_routed_through_the_plugin() {
     let mut options = GitCloneOptions::default();
     options.branch = Some("main".to_owned());
     options.depth = Some(1);
-    options.credentials = Some(sandbox_driver::GitCredentials::new("user", "hunter2"));
+    options.credentials = Some(legacy::GitCredentials::new("user", "hunter2"));
     git.clone_repo(&format!("file://{workspace}/src"), "dst", &options)
         .await
         .expect("clone over the wire");
@@ -1880,7 +1873,7 @@ impl Sandbox for LoggingSandbox {
         self.inner.working_directory()
     }
 
-    async fn platform_info(&self) -> Result<sandbox_driver::PlatformInfo> {
+    async fn platform_info(&self) -> Result<legacy::PlatformInfo> {
         self.inner.platform_info().await
     }
 
@@ -1896,11 +1889,11 @@ impl Sandbox for LoggingSandbox {
         self.inner.delete().await
     }
 
-    fn exec(&self) -> &dyn sandbox_driver::Exec {
+    fn exec(&self) -> &dyn legacy::Exec {
         self.inner.exec()
     }
 
-    fn fs(&self) -> &dyn sandbox_driver::Filesystem {
+    fn fs(&self) -> &dyn legacy::Filesystem {
         self.inner.fs()
     }
 
@@ -2065,7 +2058,7 @@ impl Sandbox for ForkingSandbox {
         self.inner.working_directory()
     }
 
-    async fn platform_info(&self) -> Result<sandbox_driver::PlatformInfo> {
+    async fn platform_info(&self) -> Result<legacy::PlatformInfo> {
         self.inner.platform_info().await
     }
 
@@ -2092,11 +2085,11 @@ impl Sandbox for ForkingSandbox {
         }))
     }
 
-    fn exec(&self) -> &dyn sandbox_driver::Exec {
+    fn exec(&self) -> &dyn legacy::Exec {
         self.inner.exec()
     }
 
-    fn fs(&self) -> &dyn sandbox_driver::Filesystem {
+    fn fs(&self) -> &dyn legacy::Filesystem {
         self.inner.fs()
     }
 }

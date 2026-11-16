@@ -5,7 +5,7 @@ use std::io;
 use daytona_api_client::apis::sandbox_api;
 use daytona_sdk::{FileSystemService, ProcessService, Sandbox as SdkSandbox};
 use reqwest::Method;
-use sandbox_driver::{DEFAULT_BUFFER_BYTES, Error, Result};
+use sandbox_driver::legacy::{DEFAULT_BUFFER_BYTES, Error, Result};
 use serde_json::Value;
 
 use crate::sdk::{DaytonaClient, daytona_error};

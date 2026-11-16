@@ -7,7 +7,8 @@ use std::time::Duration;
 
 use daytona_sdk::Client;
 use futures_util::FutureExt;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     ExecControls, ExecSpec, OneShotImage, OneShotSpec, PtyOptions, PtySize, SandboxKind,
     SandboxProvider, SandboxSource, SandboxSpec, SnapshotId, SpawnSpec, Termination,
 };
@@ -180,7 +181,7 @@ async fn nested_job_sidecars_one_shots_and_restart_share_the_sandbox_lifecycle()
                         break;
                     }
                 }
-                Ok::<_, sandbox_driver::Error>(())
+                Ok::<_, legacy::Error>(())
             })
             .await
             .unwrap()?;
@@ -248,7 +249,7 @@ async fn nested_job_sidecars_one_shots_and_restart_share_the_sandbox_lifecycle()
             attached.start().await?;
             assert_eq!(attached.fs().read("binary").await?, [0, 255, 128, 10]);
             assert_eq!(attached.fs().read("one-shot").await?, b"kept");
-            Ok::<_, sandbox_driver::Error>(())
+            Ok::<_, legacy::Error>(())
         })
         .catch_unwind()
         .await;

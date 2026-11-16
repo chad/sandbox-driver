@@ -11,7 +11,8 @@ use sandbox_driver::contract::{
     Error, ExecSpec, Expose, FileRange, LabelFilter, MutationOutcome, ProviderName, SandboxRef,
     SandboxSpec, TerminalSize,
 };
-use sandbox_driver::{ErrorReport, SandboxId, StopLevel};
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{ErrorReport, SandboxId, StopLevel};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -202,7 +203,7 @@ pub(crate) fn from_failure(failure: Failure) -> Error {
                 },
             }
         }
-        Failure::Local(sandbox_driver::Error::Overloaded { limit }) => Error::ResourceExhausted {
+        Failure::Local(legacy::Error::Overloaded { limit }) => Error::ResourceExhausted {
             message:        format!("local transport budget {limit} is exhausted"),
             retry_after_ms: None,
         },

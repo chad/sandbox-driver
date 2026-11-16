@@ -10,7 +10,7 @@ use bollard::container::LogOutput;
 use bollard::errors::Error as DockerApiError;
 use bollard::exec::{CreateExecOptions, ResizeExecOptions};
 use futures_util::{Stream, StreamExt};
-use sandbox_driver::{BASH_ENV_VAR, Error, Pty, PtyOptions, PtySession, PtySize, Result};
+use sandbox_driver::legacy::{BASH_ENV_VAR, Error, Pty, PtyOptions, PtySession, PtySize, Result};
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 use tokio::sync::Mutex;
 

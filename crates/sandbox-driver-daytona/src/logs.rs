@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use daytona_sdk::DaytonaError;
-use sandbox_driver::{Capability, Error, LogSink, LogSource, Logs, Result};
+use sandbox_driver::legacy::{Capability, Error, LogSink, LogSource, Logs, Result};
 
 use crate::sdk::{DaytonaClient, daytona_error};
 use crate::toolbox;

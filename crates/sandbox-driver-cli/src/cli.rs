@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
-use sandbox_driver::{NetworkPolicy, SandboxKind};
+use sandbox_driver::legacy::{NetworkPolicy, SandboxKind};
 
 #[derive(Debug, Parser)]
 #[command(

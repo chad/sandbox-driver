@@ -15,7 +15,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use daytona_sdk::{DaytonaError, ProcessService};
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Result, SpawnSpec, StderrTail, StdioProcess, StdioProcessHandle, Termination,
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt, DuplexStream, duplex};

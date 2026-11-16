@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{io, process};
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, ResourceKind, Result, SandboxId, SandboxState, SandboxStatus, WorkspaceOwnership,
 };
 use serde::{Deserialize, Serialize};

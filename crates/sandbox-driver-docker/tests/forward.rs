@@ -7,7 +7,8 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     ExecControls, ExecSpec, SandboxProvider, SandboxSource, SandboxSpec, SandboxState, WaitOptions,
     activate, wait_for_state,
 };
@@ -30,7 +31,7 @@ fn spec() -> SandboxSpec {
 }
 
 /// Starts a one-request HTTP responder on `PORT` inside the sandbox.
-fn serve_once(sandbox: &Arc<dyn sandbox_driver::Sandbox>, body: &str) -> CancellationToken {
+fn serve_once(sandbox: &Arc<dyn legacy::Sandbox>, body: &str) -> CancellationToken {
     let kill = CancellationToken::new();
     let script = format!(
         r#"exec perl -e 'use IO::Socket::INET; my $s = IO::Socket::INET->new(LocalAddr => "127.0.0.1", LocalPort => {PORT}, Listen => 5, ReuseAddr => 1) or exit 3; my $c = $s->accept or exit 4; my $b = "{body}"; print $c "HTTP/1.0 200 OK\r\nContent-Length: " . length($b) . "\r\nConnection: close\r\n\r\n$b"; close $c;'"#
@@ -189,9 +190,7 @@ async fn preview_url_fails_when_the_image_has_neither_bash_nor_nc() {
         }
         let preview = sandbox.preview_urls().ok_or("preview facet")?;
         match preview.preview_url(PORT).await {
-            Err(sandbox_driver::Error::Provider(error)) if error.message.contains("bash or nc") => {
-                Ok(())
-            }
+            Err(legacy::Error::Provider(error)) if error.message.contains("bash or nc") => Ok(()),
             Err(error) => Err(format!("unexpected error: {error}")),
             Ok(preview) => Err(format!("a forward was opened anyway: {}", preview.url)),
         }

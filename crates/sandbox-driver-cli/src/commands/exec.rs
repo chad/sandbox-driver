@@ -4,7 +4,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, EventContext, ExecControls, ExecSpec, OutputSink, OutputStream, Sandbox,
     SandboxProvider, Termination, WaitOptions,
 };
@@ -37,7 +38,7 @@ pub(super) async fn execute_run(
     let spec = build_spec(&args.spec, provider.kind()).await?;
     let sandbox = provider.create(&spec, events).await?;
     let operation = async {
-        sandbox_driver::activate(sandbox.as_ref(), &WaitOptions::default()).await?;
+        legacy::activate(sandbox.as_ref(), &WaitOptions::default()).await?;
         execute_command(sandbox.as_ref(), &args.exec, &args.command).await
     }
     .await;

@@ -5,12 +5,13 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, process};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, ExecControls, ExecSpec, OutputStream, OwnedProvider, Ownership, Sandbox, SandboxFilter,
     SandboxProvider, SandboxSource, SandboxSpec, SandboxState, Search, StdinSource, Termination,
     WaitOptions, WalkOptions, WalkedFile, activate,
 };
-use sandbox_driver_testing::{
+use sandbox_driver_testing::legacy::{
     ScriptedExec, ScriptedProvider, ScriptedSandbox, ScriptedStdioProcess,
 };
 use tokio::fs;
@@ -351,7 +352,7 @@ async fn stdio_processes_are_driven_by_the_test() {
     );
     let mut process = sandbox
         .exec()
-        .spawn_stdio(&sandbox_driver::SpawnSpec::new("agent"))
+        .spawn_stdio(&legacy::SpawnSpec::new("agent"))
         .await
         .expect("spawn");
     process.stdin.write_all(b"ping!").await.expect("send");

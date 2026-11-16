@@ -14,7 +14,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use daytona_sdk::GitCloneOptions as DaytonaGitCloneOptions;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     DerivedGit, Error, Git, GitBranches, GitCheckoutOptions, GitCloneOptions, GitCommit,
     GitCommitOptions, GitCredentials, GitDiffEntry, GitDiffOptions, GitFailure, GitFailureKind,
     GitFetchOptions, GitLogOptions, GitNumstat, GitPushOptions, GitStatus, ProviderError, Result,
@@ -86,7 +87,7 @@ fn clone_options(options: &GitCloneOptions) -> Result<DaytonaGitCloneOptions> {
         .depth
         .map(|depth| {
             i32::try_from(depth).map_err(|_| {
-                sandbox_driver::Error::invalid_spec(
+                legacy::Error::invalid_spec(
                     "git.clone.depth",
                     "Daytona requires a depth no greater than i32::MAX",
                 )
@@ -276,7 +277,7 @@ mod tests {
     #[test]
     fn native_clone_failures_are_classified_git_failures() {
         let kind = sandbox_driver::ProviderKind::try_new("daytona").expect("static kind");
-        let auth = Error::Auth(sandbox_driver::AuthError::new(kind.clone(), "cloning"));
+        let auth = Error::Auth(legacy::AuthError::new(kind.clone(), "cloning"));
         assert!(matches!(
             classify_native_clone(auth),
             Error::Git(failure) if failure.kind() == GitFailureKind::AuthRejected

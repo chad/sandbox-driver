@@ -2,11 +2,12 @@
 
 use std::sync::Arc;
 
+use sandbox_driver::legacy;
 use sandbox_driver_docker::DockerFactory;
 use sandbox_driver_fixture_plugins::serve_renamed;
 
 #[tokio::main]
-async fn main() -> sandbox_driver::Result<()> {
+async fn main() -> legacy::Result<()> {
     serve_renamed(
         "test-docker",
         DockerFactory::schemas(),

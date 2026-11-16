@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::{ProviderKind, SandboxSource, SandboxSpec};
+use sandbox_driver::legacy::{ProviderKind, SandboxSource, SandboxSpec};
 use tokio::fs::{read, read_to_string};
 use tokio::io::{AsyncReadExt as _, stdin as async_stdin};
 

@@ -11,7 +11,7 @@ use std::task::{Context, Poll};
 use std::{env, io, process};
 
 use sandbox_driver::contract::{ByteStream, Error as ContractError, MutationOutcome};
-use sandbox_driver::{Error, Filesystem};
+use sandbox_driver::legacy::{Error, Filesystem};
 use tokio::fs::{self as tokio_fs, File, OpenOptions};
 use tokio::io::{
     self as tokio_io, AsyncRead, AsyncSeekExt, AsyncWrite, AsyncWriteExt, BufWriter, DuplexStream,

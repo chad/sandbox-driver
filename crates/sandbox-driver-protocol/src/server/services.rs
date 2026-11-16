@@ -4,7 +4,7 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use sandbox_driver::{Capability, Error, Result};
+use sandbox_driver::legacy::{Capability, Error, Result};
 use serde_json::Value;
 use tokio::sync::{Mutex as AsyncMutex, OwnedSemaphorePermit};
 use tokio_util::sync::CancellationToken;

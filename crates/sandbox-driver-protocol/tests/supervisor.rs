@@ -5,7 +5,8 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 use std::{env, process};
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, ExecControls, ExecSpec, HealthStatus, ProviderKind, SandboxProvider, SandboxSource,
     SandboxSpec,
 };
@@ -152,7 +153,7 @@ async fn dead_plugin_fails_old_work_and_concurrent_requests_share_one_replacemen
         .await
         .expect("the supervisor serves the provider trait");
     let listed = provider
-        .list(&sandbox_driver::SandboxFilter::default())
+        .list(&legacy::SandboxFilter::default())
         .await
         .expect("list through the supervisor");
     assert!(

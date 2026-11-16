@@ -15,7 +15,7 @@ use std::future::pending;
 use std::io;
 
 use daytona_sdk::ProcessService;
-use sandbox_driver::{Error, Result, StdinReader};
+use sandbox_driver::legacy::{Error, Result, StdinReader};
 use tokio::io::AsyncReadExt as _;
 use tokio::task::JoinHandle;
 
