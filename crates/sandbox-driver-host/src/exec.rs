@@ -27,7 +27,9 @@ use crate::registry;
 /// Bash sources this file at startup. Dropped from the inherited
 /// environment so a worker's startup file never runs inside a sandboxed
 /// `bash -c`; [`sandbox_driver::legacy::ExecSpec::bash`] blanks it per command.
-const BASH_ENV_VAR: &str = "BASH_ENV";
+/// A value in a command's own env reaches that command and no shell the
+/// driver runs around it.
+pub(crate) const BASH_ENV_VAR: &str = "BASH_ENV";
 
 /// How long the output pipes may stay silent after the process has ended
 /// before the drain gives up, so a backgrounded grandchild holding the
