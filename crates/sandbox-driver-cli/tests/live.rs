@@ -13,8 +13,8 @@ use std::ffi::OsString;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command, Output, Stdio};
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, fs};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::{env, fs, thread};
 
 use serde_json::Value;
 
@@ -27,6 +27,9 @@ const DAYTONA_ENV: &[&str] = &[
 ];
 const REQUIRE_LIVE_ENV: &str = "LITHOS_CLI_E2E_REQUIRE_LIVE";
 const TEST_IMAGE: &str = "ghcr.io/lithoscomputer/ubuntu-24.04:slim-df708f910111";
+/// How long a provider's listing may lag behind the sandbox itself.
+const LISTING_LAG: Duration = Duration::from_secs(60);
+const LISTING_POLL: Duration = Duration::from_secs(1);
 
 #[test]
 fn docker_cli_workflow() {
@@ -93,7 +96,8 @@ fn run_one_shot(cli: &CliRunner, provider: &str) {
         diagnostic(&output)
     );
     // `run` destroys its sandbox, also when the command fails.
-    assert!(find(cli, &label).is_empty(), "run left its sandbox behind");
+    let left = find_until(cli, &label, none_live);
+    assert!(none_live(&left), "run left its sandbox behind: {left:?}");
 }
 
 fn persistent_workflow(cli: &CliRunner, provider: &str) {
@@ -117,7 +121,9 @@ fn persistent_workflow(cli: &CliRunner, provider: &str) {
     );
     let mut guard = SandboxGuard::new(cli, reference.clone());
 
-    let found = find(cli, &label);
+    let found = find_until(cli, &label, |found| {
+        found.len() == 1 && found[0]["state"] == "running"
+    });
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0]["name"], name.as_str());
     assert_eq!(found[0]["state"], "running");
@@ -238,9 +244,10 @@ fn persistent_workflow(cli: &CliRunner, provider: &str) {
 
     assert_success(&run(cli.command().args(["destroy", &reference])), "destroy");
     guard.disarm();
+    let left = find_until(cli, &label, none_live);
     assert!(
-        find(cli, &label).is_empty(),
-        "destroyed sandbox is still listed"
+        none_live(&left),
+        "destroyed sandbox is still listed: {left:?}"
     );
     assert!(
         !run(cli.command().args(["status", &reference]))
@@ -261,6 +268,26 @@ fn find(cli: &CliRunner, label: &str) -> Vec<Value> {
         "find",
     );
     found.as_array().cloned().expect("find returns a list")
+}
+
+/// Lists the label's sandboxes until `settled` accepts the listing or
+/// [`LISTING_LAG`] has passed, and returns the last listing. `create`, `run`
+/// and `destroy` confirm their outcome through the sandbox itself; a
+/// provider's listing may catch up seconds later, as Daytona's does.
+fn find_until(cli: &CliRunner, label: &str, settled: impl Fn(&[Value]) -> bool) -> Vec<Value> {
+    let deadline = Instant::now() + LISTING_LAG;
+    loop {
+        let found = find(cli, label);
+        if settled(&found) || Instant::now() >= deadline {
+            return found;
+        }
+        thread::sleep(LISTING_POLL);
+    }
+}
+
+/// Whether the listing shows no sandbox other than ones already deleted.
+fn none_live(found: &[Value]) -> bool {
+    found.iter().all(|sandbox| sandbox["state"] == "deleted")
 }
 
 fn provider_is_healthy(cli: &CliRunner, provider: &str) -> bool {
