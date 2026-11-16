@@ -32,6 +32,24 @@ impl CapturedOutput {
     pub fn observed_bytes(&self) -> u64 {
         (self.bytes.len() as u64).saturating_add(self.omitted_bytes)
     }
+
+    /// The last `max_bytes` the command wrote to this stream, or fewer when
+    /// fewer were kept, and how many bytes it wrote before them.
+    pub fn newest(&self, max_bytes: usize) -> (&[u8], u64) {
+        // With a gap, the bytes after it are the half of `bytes` that
+        // `Retained` kept from the end of the stream; the first half sits
+        // before the gap and is not contiguous with them.
+        let contiguous = if self.omitted_bytes == 0 {
+            self.bytes.len()
+        } else {
+            self.bytes.len() - self.bytes.len() / 2
+        };
+        let newest = &self.bytes[self.bytes.len() - contiguous.min(max_bytes)..];
+        (
+            newest,
+            self.observed_bytes().saturating_sub(newest.len() as u64),
+        )
+    }
 }
 
 // Command output can carry credentials, as `ExecSpec::argv` can.
@@ -257,6 +275,20 @@ mod tests {
             assert_eq!(output.omitted_bytes, 5, "{chunks:?}");
             assert_eq!(output.observed_bytes(), 10, "{chunks:?}");
         }
+    }
+
+    #[test]
+    fn the_newest_bytes_never_reach_back_across_the_gap() {
+        // Whole stream: the newest bytes are a plain suffix.
+        let whole = retain(10, &[b"0123456789"]);
+        assert_eq!(whole.newest(3), (b"789".as_slice(), 7));
+        assert_eq!(whole.newest(99), (b"0123456789".as_slice(), 0));
+        // Limit 5 keeps "01" and "789" around a gap of five bytes. Asking for
+        // more than the three after the gap must not return "1789".
+        let gapped = retain(5, &[b"0123456789"]);
+        assert_eq!(gapped.newest(4), (b"789".as_slice(), 7));
+        assert_eq!(gapped.newest(2), (b"89".as_slice(), 8));
+        assert_eq!(gapped.newest(0), (b"".as_slice(), 10));
     }
 
     #[test]

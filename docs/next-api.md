@@ -213,6 +213,22 @@ pub struct CapturedOutput { pub bytes: Vec<u8>, pub omitted_bytes: u64 }
 
 A command that exits nonzero is a `Captured`, not an error; `success()` is true only for an exit with code zero. Output beyond the limit is still read, so the command never blocks, and is counted in `omitted_bytes`: the first half of the limit is kept from the start of the stream and the rest from its end. `is_complete()` is false when anything was omitted or the provider reported output loss, so check it before parsing output. `duration` is how long the caller waited for the command, measured by the library around the exec.
 
+The library's own helpers that run commands fail with `CommandError`, because a failed command is an outcome, not an `Error`, and `Error` carries no command output:
+
+```rust
+pub enum CommandError {
+    Sandbox(Error),                    // the exec was refused or lost; the command may not have run
+    Failed(CommandFailure),            // the command ran and did not succeed
+    UnexpectedOutput(CommandFailure),  // it exited with zero, but its output was incomplete or unreadable
+}
+pub struct CommandFailure {
+    pub context: String, pub outcome: ExecOutcome,
+    pub stdout_tail: OutputTail, pub stderr_tail: OutputTail, pub duration: Duration,
+}
+```
+
+`CommandFailure::new(context, &captured)` builds one from any `Captured`, keeping the last 8 KiB of each stream. `context` says what the command was for, such as `stat`, never the command itself. `Display` gives the context and how the command ended and never includes output; `display_for_log()` adds the tails, which can carry credentials, so redact its result before it leaves the process.
+
 `ExecSpec::shell(script)` is the one place a shell is implied. It runs the script under Bash when the workload has `bash` on its `PATH` and under POSIX `sh` otherwise, as a non-login shell with `BASH_ENV` unset. The workload must provide `sh`.
 
 Host, Docker and Daytona also blank `BASH_ENV` for one argv of your own: when its first two words are exactly `bash` and `-c`, the command runs with `BASH_ENV` set to the empty string, whatever `env` says, so no startup file runs ahead of the script. Any other spelling, such as `/bin/bash -c` or `bash script.sh`, keeps the value you set.
