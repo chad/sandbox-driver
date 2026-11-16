@@ -5,7 +5,7 @@ use std::io::Cursor;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
-use std::{fmt, future, io};
+use std::{fmt, io};
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,7 @@ use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 use crate::capabilities::Capability;
+pub use crate::contract::{OutputLoss, StopLevel, stop_signal};
 use crate::error::{Error, Result};
 use crate::redact::EnvKeys;
 use crate::sanitize::OutputSanitization;
@@ -360,18 +361,12 @@ impl ExecControls {
     }
 }
 
-/// Which stop token fired.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum StopLevel {
-    /// [`ExecControls::term`].
-    Term,
-    /// [`ExecControls::kill`].
-    Kill,
-}
-
 impl StopLevel {
     /// The termination a provider reports for a command this stop ended.
+    ///
+    /// Hidden from the docs: it returns this module's [`Termination`], not
+    /// the one the documented `StopLevel` sits beside.
+    #[doc(hidden)]
     pub fn termination(self) -> Termination {
         match self {
             Self::Term => Termination::Cancelled,
@@ -389,15 +384,6 @@ impl fmt::Debug for ExecControls {
             .field("sink", &self.sink.is_some())
             .field("retained_output_limit", &self.retained_output_limit)
             .finish()
-    }
-}
-
-/// Resolves when an optional token is cancelled; never resolves when
-/// there is no token, so it slots into a `select!` arm unconditionally.
-pub async fn stop_signal(token: Option<&CancellationToken>) {
-    match token {
-        Some(token) => token.cancelled().await,
-        None => future::pending().await,
     }
 }
 
@@ -607,31 +593,6 @@ impl CaptureStats {
             omitted_bytes:  0,
             truncated:      false,
         }
-    }
-}
-
-/// Output a provider lost between the command and its capture accounting,
-/// counted where the loss was noticed. Daytona carries exec output through
-/// a text-only toolbox that can tear the encoded stream; its decoder
-/// discards each unreadable record, resyncs at the next newline, and
-/// counts what it threw away here. The bytes those records would have
-/// decoded to, and the stream they belonged to, are unknown, so a loss
-/// also sets [`CaptureStats::truncated`] on both streams. Every other
-/// provider reports zero.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[non_exhaustive]
-#[serde(default)]
-pub struct OutputLoss {
-    /// Encoded records the decoder discarded.
-    pub dropped_frames: u64,
-    /// Encoded bytes those records held, their newline included.
-    pub dropped_bytes:  u64,
-}
-
-impl OutputLoss {
-    /// Whether any output was lost.
-    pub fn is_lossy(self) -> bool {
-        self.dropped_frames != 0 || self.dropped_bytes != 0
     }
 }
 

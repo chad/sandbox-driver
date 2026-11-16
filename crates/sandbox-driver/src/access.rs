@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::capabilities::Capability;
+pub use crate::contract::{SshAccessInfo, VncConnection};
 use crate::error::{Error, Result};
 
 /// Preview URLs for ports inside a sandbox.
@@ -72,28 +73,6 @@ pub trait SshAccess: Send + Sync {
     }
 }
 
-/// Minted SSH access.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct SshAccessInfo {
-    /// Ready-to-run command, e.g. `ssh user@gateway -p 2222`.
-    pub command:    String,
-    #[serde(default)]
-    pub token:      Option<String>,
-    #[serde(default, with = "crate::wire_time::option")]
-    pub expires_at: Option<SystemTime>,
-}
-
-impl SshAccessInfo {
-    pub fn new(command: impl Into<String>) -> Self {
-        Self {
-            command:    command.into(),
-            token:      None,
-            expires_at: None,
-        }
-    }
-}
-
 /// A local command that opens a shell in the sandbox — Docker's
 /// `docker exec -it …`. Honest about not being SSH.
 #[async_trait]
@@ -113,22 +92,4 @@ pub trait WebTerminal: Send + Sync {
 #[async_trait]
 pub trait Vnc: Send + Sync {
     async fn vnc_connection(&self) -> Result<VncConnection>;
-}
-
-/// How to reach a sandbox's VNC endpoint.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[non_exhaustive]
-pub struct VncConnection {
-    pub url:      String,
-    #[serde(default)]
-    pub password: Option<String>,
-}
-
-impl VncConnection {
-    pub fn new(url: impl Into<String>) -> Self {
-        Self {
-            url:      url.into(),
-            password: None,
-        }
-    }
 }

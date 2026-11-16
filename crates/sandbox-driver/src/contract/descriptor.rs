@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::NamespaceId;
-use crate::{Isolation, ProviderKind};
+use crate::ProviderKind;
 
 /// JSON Schema object. Validation against its dialect belongs to the catalog
 /// implementation; merely deserializing this DTO does not validate a schema.
@@ -43,6 +43,19 @@ pub struct Descriptor {
     pub network:      BTreeSet<NetworkMode>,
     pub ports:        PortSupport,
     pub capabilities: CapabilitySet,
+}
+
+/// Isolation level a provider declares for its sandboxes. Never assumed.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum Isolation {
+    /// No isolation: commands run with the caller's own permissions (Host).
+    None,
+    /// Kernel-sharing container isolation (Docker).
+    Container,
+    /// Hardware-virtualized isolation (Daytona, boxd).
+    Vm,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

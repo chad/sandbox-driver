@@ -2,18 +2,7 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-/// Isolation level a provider declares for its sandboxes. Never assumed.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[non_exhaustive]
-pub enum Isolation {
-    /// No isolation: commands run with the caller's own permissions (Host).
-    None,
-    /// Kernel-sharing container isolation (Docker).
-    Container,
-    /// Hardware-virtualized isolation (Daytona, boxd).
-    Vm,
-}
+pub use crate::contract::Isolation;
 
 /// A capability a caller can preflight and an [`crate::Error::Unsupported`]
 /// can name. Serialized as a dotted path, e.g. `"exec.stdio_process"`.

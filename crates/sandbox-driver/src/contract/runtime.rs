@@ -4,6 +4,7 @@ use std::num::NonZeroU16;
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -15,7 +16,7 @@ use super::{
     ProviderName, ProviderSchemas, SandboxRef, SandboxSpec, SandboxState, Status,
 };
 use crate::redact::EnvKeys;
-use crate::{FileKind, ProviderKind, SandboxId};
+use crate::{ProviderKind, SandboxId};
 
 /// Streaming bytes with bounded buffering owned by the provider/adapter.
 /// Read errors are transfer failures, never a successful truncated file.
@@ -187,6 +188,17 @@ pub struct FileRange {
     pub length: Option<u64>,
 }
 
+/// Kind of a directory entry.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum FileKind {
+    File,
+    Directory,
+    Symlink,
+    Other,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FileEntry {
     pub path: String,
@@ -236,10 +248,50 @@ pub trait Ports: Send + Sync {
 
 #[async_trait]
 pub trait Endpoints: Send + Sync {
-    async fn ssh(&self, ttl_ms: u64) -> Result<crate::SshAccessInfo, Error>;
+    async fn ssh(&self, ttl_ms: u64) -> Result<SshAccessInfo, Error>;
     async fn ssh_revoke(&self, token: &str) -> Result<(), Error>;
     async fn shell_command(&self) -> Result<String, Error>;
-    async fn vnc(&self) -> Result<crate::VncConnection, Error>;
+    async fn vnc(&self) -> Result<VncConnection, Error>;
+}
+
+/// Minted SSH access.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct SshAccessInfo {
+    /// Ready-to-run command, e.g. `ssh user@gateway -p 2222`.
+    pub command:    String,
+    #[serde(default)]
+    pub token:      Option<String>,
+    #[serde(default, with = "crate::wire_time::option")]
+    pub expires_at: Option<SystemTime>,
+}
+
+impl SshAccessInfo {
+    pub fn new(command: impl Into<String>) -> Self {
+        Self {
+            command:    command.into(),
+            token:      None,
+            expires_at: None,
+        }
+    }
+}
+
+/// How to reach a sandbox's VNC endpoint.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct VncConnection {
+    pub url:      String,
+    #[serde(default)]
+    pub password: Option<String>,
+}
+
+impl VncConnection {
+    pub fn new(url: impl Into<String>) -> Self {
+        Self {
+            url:      url.into(),
+            password: None,
+        }
+    }
 }
 
 /// Where a one-shot container's image comes from. This is never the

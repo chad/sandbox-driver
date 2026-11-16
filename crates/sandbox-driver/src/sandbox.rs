@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::access::{PreviewUrls, ShellCommand, SshAccess, Vnc, WebTerminal};
 use crate::capabilities::{Capabilities, Capability};
+pub use crate::contract::WorkspaceOwnership;
 use crate::error::{Error, Result};
 use crate::exec::Exec;
 use crate::fs::Filesystem;
@@ -18,18 +19,6 @@ use crate::search::{Search, SearchFacet};
 use crate::service::{Services, ServicesFacet};
 use crate::spec::{LifecycleTimers, NetworkPolicy, PlatformInfo, Resources};
 use crate::state::SandboxStatus;
-
-/// Who owns a Host sandbox's workspace directory.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[non_exhaustive]
-pub enum WorkspaceOwnership {
-    /// Caller-owned directory designated in the spec. `delete` releases
-    /// the handle and never touches its contents.
-    Designated,
-    /// Library-created temporary workspace. `delete` removes it.
-    Managed,
-}
 
 /// A sandbox handle: an ID plus a provider connection.
 ///

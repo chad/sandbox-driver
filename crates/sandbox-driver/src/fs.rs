@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crate::capabilities::Capability;
+pub use crate::contract::FileKind;
 use crate::error::{Error, Result};
 
 /// File operations inside a sandbox. Paths are sandbox-side strings
@@ -170,17 +171,6 @@ pub trait Filesystem: Send + Sync {
         let _ = (remote, local);
         Err(Error::unsupported(Capability::FsDownload))
     }
-}
-
-/// Kind of a directory entry.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[non_exhaustive]
-pub enum FileKind {
-    File,
-    Directory,
-    Symlink,
-    Other,
 }
 
 /// One entry from [`Filesystem::list_dir`].

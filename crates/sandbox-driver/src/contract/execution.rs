@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::fmt;
-use std::future::Future;
+use std::future::{self, Future};
 use std::num::NonZeroU16;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -12,7 +12,6 @@ use tokio_util::sync::CancellationToken;
 use super::Error;
 use super::runtime::ByteStream;
 use super::workload::{validate_argv, validate_env, validate_name};
-use crate::OutputLoss;
 use crate::redact::EnvKeys;
 
 /// An argv executed in the requested workload, never in its outer runner.
@@ -109,6 +108,25 @@ impl fmt::Debug for ExecControls {
     }
 }
 
+/// Which stop token fired.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StopLevel {
+    /// [`ExecControls::term`].
+    Term,
+    /// [`ExecControls::kill`].
+    Kill,
+}
+
+/// Resolves when an optional token is cancelled; never resolves when
+/// there is no token, so it slots into a `select!` arm unconditionally.
+pub async fn stop_signal(token: Option<&CancellationToken>) {
+    match token {
+        Some(token) => token.cancelled().await,
+        None => future::pending().await,
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TerminalSize {
@@ -134,4 +152,29 @@ pub struct ExecOutcome {
     pub signal:      Option<i32>,
     #[serde(default)]
     pub output_loss: OutputLoss,
+}
+
+/// Output a provider lost between the command and its capture accounting,
+/// counted where the loss was noticed. Daytona carries exec output through
+/// a text-only toolbox that can tear the encoded stream; its decoder
+/// discards each unreadable record, resyncs at the next newline, and
+/// counts what it threw away here. The bytes those records would have
+/// decoded to, and the stream they belonged to, are unknown, so a loss
+/// also sets `CaptureStats::truncated` on both streams. Every other
+/// provider reports zero.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+#[serde(default)]
+pub struct OutputLoss {
+    /// Encoded records the decoder discarded.
+    pub dropped_frames: u64,
+    /// Encoded bytes those records held, their newline included.
+    pub dropped_bytes:  u64,
+}
+
+impl OutputLoss {
+    /// Whether any output was lost.
+    pub fn is_lossy(self) -> bool {
+        self.dropped_frames != 0 || self.dropped_bytes != 0
+    }
 }

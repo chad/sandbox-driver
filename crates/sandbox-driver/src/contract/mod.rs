@@ -25,24 +25,29 @@ pub use catalog::{
 pub use config::{Environment, EnvironmentSource, PluginTrust, ProviderEntry};
 pub use descriptor::{
     AccessScope, CapabilitySet, ContainerField, Descriptor, Durability, EndpointCapability,
-    JsonSchema, Locality, Namespace, NamespaceScope, NetworkMode, PortSupport, ProviderSchemas,
-    ResourceCapability, SourceKind, TimerCapability,
+    Isolation, JsonSchema, Locality, Namespace, NamespaceScope, NetworkMode, PortSupport,
+    ProviderSchemas, ResourceCapability, SourceKind, TimerCapability,
 };
 pub use error::{Error, MutationOutcome, RemainingResource};
 pub use execution::{
-    ExecControls, ExecOutcome, ExecSpec, OutputSink, OutputStream, TerminalSize, Termination,
+    ExecControls, ExecOutcome, ExecSpec, OutputLoss, OutputSink, OutputStream, StopLevel,
+    TerminalSize, Termination, stop_signal,
 };
 pub use identity::SandboxRef;
 pub use runtime::{
-    Activation, ByteStream, Containers, Endpoints, Expose, Exposure, FileEntry, FileRange, Files,
-    Health, LabelFilter, OneShotImage, OneShotSpec, PluginLocation, Ports, ProviderFactory,
-    ProviderRuntime, Sandbox, SandboxSummary, SecretResolver, SecretValues, WorkloadAdmission,
+    Activation, ByteStream, Containers, Endpoints, Expose, Exposure, FileEntry, FileKind,
+    FileRange, Files, Health, LabelFilter, OneShotImage, OneShotSpec, PluginLocation, Ports,
+    ProviderFactory, ProviderRuntime, Sandbox, SandboxSummary, SecretResolver, SecretValues,
+    SshAccessInfo, VncConnection, WorkloadAdmission,
 };
 pub use status::{SandboxState, ServiceAddress, Status};
 pub use units::{ParseUnitError, parse_duration_ms, parse_size_mib};
 pub use workload::{
     ContainerSpec, NetworkPolicy, ReadinessCheck, Resources, SandboxSpec, ServiceSpec, Source,
-    Timers,
+    Timers, WorkspaceOwnership,
 };
 
-pub use crate::id::{EnvironmentName, NamespaceId, ProviderName, Sha256Digest};
+pub use crate::id::{
+    EnvironmentName, InvalidIdError, NamespaceId, ProviderKind, ProviderName, SandboxId,
+    Sha256Digest, SnapshotId,
+};

@@ -7,9 +7,9 @@ use serde_json::Value;
 
 use super::units::{Mib, Millis};
 use super::{ContainerField, Error, NetworkMode, ResourceCapability, SourceKind, TimerCapability};
+use crate::SnapshotId;
 use crate::id::validate_label;
 use crate::redact::EnvKeys;
-use crate::{SnapshotId, WorkspaceOwnership};
 
 /// The caller's workload, never a helper image or outer runner.
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -243,6 +243,18 @@ impl Timers {
             (ttl_ms.is_some(), TimerCapability::Ttl, "timers.ttl_ms"),
         ])
     }
+}
+
+/// Who owns a Host sandbox's workspace directory.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum WorkspaceOwnership {
+    /// Caller-owned directory designated in the spec. `delete` releases
+    /// the handle and never touches its contents.
+    Designated,
+    /// Library-created temporary workspace. `delete` removes it.
+    Managed,
 }
 
 /// Portable workload declaration. This unvalidated DTO is deliberately
