@@ -215,6 +215,8 @@ A command that exits nonzero is a `Captured`, not an error; `success()` is true 
 
 `ExecSpec::shell(script)` is the one place a shell is implied. It runs the script under Bash when the workload has `bash` on its `PATH` and under POSIX `sh` otherwise, as a non-login shell with `BASH_ENV` unset. The workload must provide `sh`.
 
+Host, Docker and Daytona also blank `BASH_ENV` for one argv of your own: when its first two words are exactly `bash` and `-c`, the command runs with `BASH_ENV` set to the empty string, whatever `env` says, so no startup file runs ahead of the script. Any other spelling, such as `/bin/bash -c` or `bash script.sh`, keeps the value you set.
+
 ### Files and ports
 
 `Files` is `get(path, range)`, `put(path, bytes)` creating parents, and `list(path, depth)`. Everything else (`stat`, `remove`, `rename`, `mkdir`) is derived over exec by the library and works on every provider.
