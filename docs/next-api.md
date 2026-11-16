@@ -217,9 +217,9 @@ The library's own helpers that run commands fail with `CommandError`, because a 
 
 ```rust
 pub enum CommandError {
-    Sandbox(Error),                    // the exec was refused or lost; the command may not have run
-    Failed(CommandFailure),            // the command ran and did not succeed
-    UnexpectedOutput(CommandFailure),  // it exited with zero, but its output was incomplete or unreadable
+    Sandbox(Error),                         // the exec was refused or lost; the command may not have run
+    Failed(Box<CommandFailure>),            // the command ran and did not succeed
+    UnexpectedOutput(Box<CommandFailure>),  // it exited with zero, but its output was incomplete or unreadable
 }
 pub struct CommandFailure {
     pub context: String, pub outcome: ExecOutcome,

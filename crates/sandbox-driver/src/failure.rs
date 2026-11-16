@@ -125,11 +125,18 @@ pub enum CommandError {
     Sandbox(#[from] Error),
     /// The command ran and did not succeed.
     #[error(transparent)]
-    Failed(#[from] CommandFailure),
+    Failed(Box<CommandFailure>),
     /// The command exited with code zero, but its output was incomplete or
     /// not in the form the helper reads.
     #[error("{}: the command's output could not be read", .0.context)]
-    UnexpectedOutput(CommandFailure),
+    UnexpectedOutput(Box<CommandFailure>),
+}
+
+// A failure is boxed so that the error stays small on the success path.
+impl From<CommandFailure> for CommandError {
+    fn from(failure: CommandFailure) -> Self {
+        Self::Failed(Box::new(failure))
+    }
 }
 
 impl CommandError {
@@ -207,7 +214,7 @@ mod tests {
     #[test]
     fn an_error_names_its_command_only_when_one_ran() {
         let failure = CommandFailure::new("stat", &captured(0, b"??", CapturedOutput::default()));
-        let unreadable = CommandError::UnexpectedOutput(failure.clone());
+        let unreadable = CommandError::UnexpectedOutput(Box::new(failure.clone()));
         assert_eq!(
             unreadable.to_string(),
             "stat: the command's output could not be read"
@@ -218,5 +225,10 @@ mod tests {
         });
         assert_eq!(refused.failure(), None);
         assert_eq!(refused.to_string(), "sandbox busy: stopping");
+        // A failed command reads the same inside the error as on its own.
+        assert_eq!(
+            CommandError::from(failure.clone()).to_string(),
+            failure.to_string()
+        );
     }
 }
