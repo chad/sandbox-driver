@@ -11,14 +11,13 @@ use bollard::Docker;
 use bollard::container::{ListContainersOptions, RemoveContainerOptions};
 use bollard::models::ContainerInspectResponse;
 use bollard::network::ListNetworksOptions;
-use sandbox_driver::ProviderKind;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     AccessScope, CatalogOptions, Durability, Environment, EnvironmentName, Error, ExecControls,
-    ExecSpec, LabelFilter, OneShotImage, OneShotSpec, OutputSink, ProviderEntry, ProviderName,
-    ReadinessCheck, Registry, SandboxSpec, SandboxState, Sandboxes, SecretResolver, ServiceSpec,
-    Source, StaticEnvironments, Termination,
+    ExecSpec, LabelFilter, OneShotImage, OneShotSpec, OutputSink, ProviderEntry, ProviderKind,
+    ProviderName, ReadinessCheck, Registry, SandboxSpec, SandboxState, Sandboxes, SecretResolver,
+    ServiceSpec, Source, StaticEnvironments, Termination,
 };
-use sandbox_driver_conformance::contract::{Commands, Conformance};
+use sandbox_driver_conformance::{Commands, Conformance};
 use sandbox_driver_docker::DockerFactory;
 
 const IMAGE: &str = "ghcr.io/fabro-sh/dhi-alpine-base:3.23-dev-2026-06-17";

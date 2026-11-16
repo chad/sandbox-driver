@@ -10,14 +10,13 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{env, fs};
 
 use async_trait::async_trait;
-use sandbox_driver::ProviderKind;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     AccessScope, CapabilitySet, CatalogOptions, Durability, Environment, EnvironmentName, Error,
-    ExecControls, ExecSpec, Expose, LabelFilter, ProviderEntry, ProviderName, Registry,
-    SandboxSpec, SandboxState, Sandboxes, SecretResolver, ServiceSpec, Source, SourceKind,
-    StaticEnvironments, Termination,
+    ExecControls, ExecSpec, Expose, LabelFilter, ProviderEntry, ProviderKind, ProviderName,
+    Registry, SandboxSpec, SandboxState, Sandboxes, SecretResolver, ServiceSpec, Source,
+    SourceKind, StaticEnvironments, Termination,
 };
-use sandbox_driver_conformance::contract::{Commands, Conformance};
+use sandbox_driver_conformance::{Commands, Conformance};
 use sandbox_driver_host::HostFactory;
 use serde_json::json;
 use tokio::io::AsyncReadExt;

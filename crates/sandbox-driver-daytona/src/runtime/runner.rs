@@ -13,11 +13,10 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures_util::future;
-use sandbox_driver::contract::{
-    ContainerSpec, Error, ReadinessCheck, SecretValues, ServiceAddress, ServiceSpec,
-};
-use sandbox_driver::legacy;
 use sandbox_driver::legacy::{Result as LegacyResult, Sandbox as _};
+use sandbox_driver::{
+    ContainerSpec, Error, ReadinessCheck, SecretValues, ServiceAddress, ServiceSpec, legacy,
+};
 use sandbox_driver_docker_config::RegistryAuth;
 use tokio::time;
 

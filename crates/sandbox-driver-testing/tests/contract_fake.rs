@@ -3,12 +3,12 @@ use std::io::Cursor;
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Activation, Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, ProviderFactory,
     ProviderName, ProviderRuntime, Sandbox, SandboxSpec, SandboxState, SecretValues, Source,
     WorkloadAdmission,
 };
-use sandbox_driver_testing::contract::{FakeExec, FakeProvider};
+use sandbox_driver_testing::{FakeExec, FakeProvider};
 use tokio::io::AsyncReadExt;
 use tokio::sync::mpsc;
 use tokio::time;

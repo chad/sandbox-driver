@@ -1,5 +1,5 @@
 //! Host side of protocol version 3: a configured plugin child adapted to
-//! `sandbox_driver::contract::ProviderRuntime`.
+//! `sandbox_driver::ProviderRuntime`.
 //!
 //! Each launch is a *generation*. Handles keep the generation that issued
 //! them and fail with `Stale` once it ends. A runtime call after a crash
@@ -17,14 +17,13 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{SandboxId, StopLevel, TransportError};
+use sandbox_driver::{
     ByteStream, Descriptor, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
     FileEntry, FileRange, Files, Health, LabelFilter, MutationOutcome, OutputStream, Ports,
     ProviderName, ProviderRuntime, ProviderSchemas, Sandbox, SandboxRef, SandboxSummary, Status,
-    TerminalSize, WorkloadAdmission,
+    TerminalSize, WorkloadAdmission, legacy,
 };
-use sandbox_driver::legacy;
-use sandbox_driver::legacy::{SandboxId, StopLevel, TransportError};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;

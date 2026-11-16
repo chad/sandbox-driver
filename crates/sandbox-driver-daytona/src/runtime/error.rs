@@ -8,8 +8,8 @@
 use std::error::Error as StdError;
 
 use daytona_sdk::DaytonaError;
-use sandbox_driver::contract::{Error, MutationOutcome, RemainingResource};
 use sandbox_driver::legacy::Error as Legacy;
+use sandbox_driver::{Error, MutationOutcome, RemainingResource};
 
 use crate::cleanup::INCOMPLETE_CLEANUP_CODE;
 

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Activation, Error, PluginLocation, ProviderFactory, ProviderRuntime, ProviderSchemas,
 };
 

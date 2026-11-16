@@ -12,15 +12,15 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{env, fs, process};
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     AccessScope, CapabilitySet, CatalogOptions, Durability, Environment, EnvironmentName, Error,
     ExecControls, ExecSpec, Expose, LabelFilter, MutationOutcome, ProviderEntry, ProviderName,
     Registry, SandboxSpec, SandboxState, Sandboxes, SecretResolver, ServiceSpec, Source,
     SourceKind, StaticEnvironments, Termination,
 };
-use sandbox_driver_conformance::contract::{Commands, Conformance};
+use sandbox_driver_conformance::{Commands, Conformance};
 use sandbox_driver_protocol::{PluginLoader, file_sha256};
-use sandbox_driver_testing::contract::FakeProvider;
+use sandbox_driver_testing::FakeProvider;
 use serde_json::json;
 use tokio::io::AsyncReadExt;
 use tokio::time;

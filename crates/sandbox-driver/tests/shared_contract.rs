@@ -3,12 +3,11 @@
 
 use std::collections::BTreeSet;
 
-use sandbox_driver::contract::{
+use sandbox_driver::{
     AccessScope, CapabilitySet, Descriptor, Durability, Error, MutationOutcome, NamespaceId,
     NetworkPolicy, PluginTrust, PortSupport, ProviderEntry, ProviderSchemas, Resources, SandboxRef,
-    SandboxSpec, SandboxState, Source, Status, TimerCapability,
+    SandboxSpec, SandboxState, Source, Status, TimerCapability, legacy,
 };
-use sandbox_driver::legacy;
 use serde_json::{Value, json};
 
 fn reference() -> SandboxRef {

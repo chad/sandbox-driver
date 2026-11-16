@@ -7,17 +7,16 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use daytona_sdk::{DaytonaConfig, SandboxListItem};
 use futures_util::{FutureExt, TryStreamExt};
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{
+    EventEmitter, HealthStatus, Isolation, SandboxId, SandboxProvider as _,
+    SandboxState as LegacyState,
+};
+use sandbox_driver::{
     AccessScope, Activation, CapabilitySet, ContainerField, Descriptor, Durability, Error, Health,
     LabelFilter, Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode,
     PortSupport, ProviderName, ProviderRuntime, ProviderSchemas, RemainingResource,
     ResourceCapability, Sandbox, SandboxRef, SandboxSummary, SourceKind, TimerCapability,
-    WorkloadAdmission,
-};
-use sandbox_driver::legacy;
-use sandbox_driver::legacy::{
-    EventEmitter, HealthStatus, Isolation, SandboxId, SandboxProvider as _,
-    SandboxState as LegacyState,
+    WorkloadAdmission, legacy,
 };
 use serde::Deserialize;
 use tokio::time;
@@ -422,7 +421,7 @@ mod tests {
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::time::Duration;
 
-    use sandbox_driver::contract::{
+    use sandbox_driver::{
         CatalogOptions, Environment, EnvironmentName, ExecControls, ExecSpec, OneShotImage,
         OneShotSpec, ProviderEntry, Registry, SandboxSpec, SandboxState, Sandboxes, SecretResolver,
         Source, StaticEnvironments, Termination,

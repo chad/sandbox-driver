@@ -7,12 +7,11 @@ use std::fmt;
 use std::num::NonZeroU16;
 use std::path::PathBuf;
 
-use sandbox_driver::contract::{
-    Error, ExecSpec, Expose, FileRange, LabelFilter, MutationOutcome, ProviderName, SandboxRef,
-    SandboxSpec, TerminalSize,
-};
-use sandbox_driver::legacy;
 use sandbox_driver::legacy::{ErrorReport, SandboxId, StopLevel};
+use sandbox_driver::{
+    Error, ExecSpec, Expose, FileRange, LabelFilter, MutationOutcome, ProviderName, SandboxRef,
+    SandboxSpec, TerminalSize, legacy,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

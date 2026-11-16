@@ -15,9 +15,8 @@ use std::env;
 use std::io::{self, Write as _};
 use std::sync::Arc;
 
-use sandbox_driver::contract::{ProviderFactory, ProviderSchemas};
-use sandbox_driver::legacy;
 use sandbox_driver::legacy::SandboxProvider;
+use sandbox_driver::{ProviderFactory, ProviderSchemas, legacy};
 use tokio::io::{stdin, stdout};
 
 pub use self::loader::PluginLoader;

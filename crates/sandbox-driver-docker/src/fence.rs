@@ -18,7 +18,7 @@ use bollard::container::{Config, CreateContainerOptions, ListContainersOptions};
 use bollard::errors::Error as DockerApiError;
 use bollard::models::{ContainerCreateResponse, ContainerInspectResponse};
 use futures_util::future::BoxFuture;
-use sandbox_driver::contract::RemainingResource;
+use sandbox_driver::RemainingResource;
 use sandbox_driver::legacy::{Error, ProviderError, Result, TransportError};
 use serde_json::Value;
 use tokio::time::error::Elapsed;

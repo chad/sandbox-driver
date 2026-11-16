@@ -11,12 +11,12 @@ use std::fmt::Write as _;
 use std::num::{NonZeroU32, NonZeroU64};
 use std::time::Duration;
 
-use sandbox_driver::contract::{
-    ContainerSpec, Error, NetworkPolicy, Resources, SandboxSpec, ServiceSpec, Source,
-};
 use sandbox_driver::legacy::{
     BASH_ENV_VAR, LifecycleTimers, NetworkPolicy as LegacyNetwork, Resources as LegacyResources,
     SandboxKind, SandboxSource, SandboxSpec as LegacySpec,
+};
+use sandbox_driver::{
+    ContainerSpec, Error, NetworkPolicy, Resources, SandboxSpec, ServiceSpec, Source,
 };
 use sandbox_driver_daytona_config::{
     DaytonaProviderConfig, DockerExecutionTarget, NestedDockerConfig, allocation_mib,
@@ -435,8 +435,7 @@ fn unsupported(capability: &str) -> Error {
 mod tests {
     use std::num::NonZeroU16;
 
-    use sandbox_driver::SnapshotId;
-    use sandbox_driver::contract::{ServiceSpec, Timers};
+    use sandbox_driver::{ServiceSpec, SnapshotId, Timers};
 
     use super::*;
 

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-pub use crate::contract::WorkspaceOwnership;
+pub use crate::WorkspaceOwnership;
 use crate::id::{SandboxId, SnapshotId};
 use crate::legacy::access::{PreviewUrls, ShellCommand, SshAccess, Vnc, WebTerminal};
 use crate::legacy::capabilities::{Capabilities, Capability};

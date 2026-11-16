@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::contract::Error as ContractError;
+use sandbox_driver::Error as ContractError;
 use sandbox_driver::legacy::{
     Capability, Error, Event, EventContext, EventObserver, Result, Sandbox, SandboxId,
     SandboxProvider, SnapshotId, SnapshotProvider, TransportError, VolumeId, VolumeProvider,

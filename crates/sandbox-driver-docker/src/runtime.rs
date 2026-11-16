@@ -1,4 +1,4 @@
-//! The Docker provider under the shared contract (`sandbox_driver::contract`).
+//! The Docker provider under the shared contract (`sandbox_driver`).
 //!
 //! [`DockerFactory`] is the built-in registration a [`Registry`] takes. It
 //! activates one runtime per provider entry from that entry's `config` alone;
@@ -9,7 +9,7 @@
 //! instance on the daemon (`access: shared`), and sandboxes outlive the
 //! process (`durability: machine`).
 //!
-//! [`Registry`]: sandbox_driver::contract::Registry
+//! [`Registry`]: sandbox_driver::Registry
 
 mod error;
 mod io;
@@ -27,7 +27,11 @@ use async_trait::async_trait;
 use bollard::container::ListContainersOptions;
 use bollard::models::ContainerInspectResponse;
 use bollard::{API_DEFAULT_VERSION, Docker};
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{
+    self, Exec, ExecStreamingResult, Isolation, OneShot, PreviewUrls, SandboxId, SandboxProvider,
+    ShellCommand, StdinSource,
+};
+use sandbox_driver::{
     AccessScope, Activation, ByteStream, CapabilitySet, ContainerField, Containers, Descriptor,
     Durability, EndpointCapability, Endpoints, Error as ContractError, ExecControls, ExecOutcome,
     ExecSpec, Expose, Exposure, FileEntry, FileRange, Files, Health, JsonSchema, LabelFilter,
@@ -36,10 +40,6 @@ use sandbox_driver::contract::{
     ProviderName, ProviderRuntime, ProviderSchemas, ResourceCapability, Resources, Sandbox,
     SandboxRef, SandboxState, SandboxSummary, ServiceAddress, SourceKind, Status, Termination,
     WorkloadAdmission,
-};
-use sandbox_driver::legacy::{
-    self, Exec, ExecStreamingResult, Isolation, OneShot, PreviewUrls, SandboxId, SandboxProvider,
-    ShellCommand, StdinSource,
 };
 use serde::Deserialize;
 use tokio::time;

@@ -10,11 +10,11 @@ use bollard::models::{
     ContainerInspectResponse, EndpointSettings, HostConfig, Mount, MountTypeEnum,
 };
 use bollard::network::{ConnectNetworkOptions, DisconnectNetworkOptions};
-use sandbox_driver::contract::{Error as ContractError, RemainingResource};
 use sandbox_driver::legacy::{
     BASH_ENV_VAR, Error, ErrorReport, LifecycleTimers, NetworkPolicy, ProviderError, ProviderKind,
     Result, SandboxKind, SandboxSource, SandboxSpec, SandboxState, TransportError,
 };
+use sandbox_driver::{Error as ContractError, RemainingResource};
 use serde::Deserialize;
 use tokio::time;
 

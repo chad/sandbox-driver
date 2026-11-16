@@ -4,9 +4,9 @@ use std::time::{Duration, SystemTime};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-pub use crate::contract::{SshAccessInfo, VncConnection};
 use crate::legacy::capabilities::Capability;
 use crate::legacy::error::{Error, Result};
+pub use crate::{SshAccessInfo, VncConnection};
 
 /// Preview URLs for ports inside a sandbox.
 #[async_trait]

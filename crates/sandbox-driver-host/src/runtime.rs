@@ -14,18 +14,18 @@ use async_trait::async_trait;
 use nix::errno::Errno;
 use nix::fcntl::{Flock, FlockArg};
 use nix::unistd::gethostname;
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{
+    FileKind, Isolation, OutputStream, SandboxId, SandboxProvider, SandboxSource, StdinSource,
+    WorkspaceOwnership,
+};
+use sandbox_driver::{
     AccessScope, Activation, ByteStream, CapabilitySet, Descriptor, Durability, Error,
     ExecControls, ExecOutcome, ExecSpec, Expose, Exposure, FileEntry, FileRange, Files, Health,
     LabelFilter, Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode,
     OutputStream as ContractStream, PluginLocation, PortSupport, Ports, ProviderFactory,
     ProviderName, ProviderRuntime, ProviderSchemas, RemainingResource, Resources, Sandbox,
     SandboxRef, SandboxState, SandboxSummary, SourceKind, Status, Termination, WorkloadAdmission,
-};
-use sandbox_driver::legacy;
-use sandbox_driver::legacy::{
-    FileKind, Isolation, OutputStream, SandboxId, SandboxProvider, SandboxSource, StdinSource,
-    WorkspaceOwnership,
+    legacy,
 };
 use serde_json::json;
 use tokio::fs as tokio_fs;

@@ -5,8 +5,8 @@
 //! outcome the provider could not establish stays `Transport` with an unknown
 //! outcome, so a caller never reads an uncertain mutation as refused or done.
 
-use sandbox_driver::contract::{Error as ContractError, MutationOutcome, RemainingResource};
 use sandbox_driver::legacy::{Error, ProviderError};
+use sandbox_driver::{Error as ContractError, MutationOutcome, RemainingResource};
 
 use crate::fence;
 

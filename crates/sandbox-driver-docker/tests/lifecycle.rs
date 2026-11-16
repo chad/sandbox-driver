@@ -5,11 +5,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use bollard::Docker;
-use sandbox_driver::contract::Error as ContractError;
-use sandbox_driver::legacy;
 use sandbox_driver::legacy::{
     Error, Sandbox, SandboxFilter, SandboxId, SandboxProvider, SandboxSource, SandboxSpec,
 };
+use sandbox_driver::{Error as ContractError, legacy};
 use sandbox_driver_docker::DockerProvider;
 use serde_json::{Value, json};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, duplex, split};

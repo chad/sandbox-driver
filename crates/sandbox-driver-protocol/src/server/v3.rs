@@ -8,12 +8,11 @@ use std::collections::BTreeMap;
 use std::env;
 use std::sync::Arc;
 
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Activation, ByteStream, Error, ExecControls, MutationOutcome, OutputSink, OutputStream,
-    ProviderEntry, ProviderFactory, ProviderRuntime, ProviderSchemas, Sandbox, SecretValues,
-    TerminalSize, WorkloadAdmission,
+    ProviderEntry, ProviderFactory, ProviderRuntime, ProviderSchemas, Sandbox, SandboxId,
+    SecretValues, StopLevel, TerminalSize, WorkloadAdmission, legacy,
 };
-use sandbox_driver::{SandboxId, StopLevel, legacy};
 use serde_json::Value;
 use tokio::io::AsyncReadExt;
 use tokio::sync::{Mutex as AsyncMutex, OnceCell, OwnedSemaphorePermit, watch};

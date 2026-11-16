@@ -1,6 +1,6 @@
-use sandbox_driver::contract::ExecSpec;
-use sandbox_driver_conformance::contract::{Commands, Conformance};
-use sandbox_driver_testing::contract::{FakeExec, FakeProvider};
+use sandbox_driver::ExecSpec;
+use sandbox_driver_conformance::{Commands, Conformance};
+use sandbox_driver_testing::{FakeExec, FakeProvider};
 
 #[tokio::test]
 async fn new_contract_fake_passes_common_suite() {

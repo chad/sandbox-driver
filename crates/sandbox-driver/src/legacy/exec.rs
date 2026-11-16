@@ -13,11 +13,11 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, copy};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
-pub use crate::contract::{OutputLoss, StopLevel, stop_signal};
 use crate::legacy::capabilities::Capability;
 use crate::legacy::error::{Error, Result};
 use crate::legacy::sanitize::OutputSanitization;
 use crate::redact::EnvKeys;
+pub use crate::{OutputLoss, StopLevel, stop_signal};
 
 /// The interpreter [`ExecSpec::bash`] names, resolved through `PATH`
 /// (NixOS has no `/bin/bash`).

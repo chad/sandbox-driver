@@ -1,10 +1,18 @@
-//! Core traits and types for driving sandboxes across providers.
+//! Shared declarations for the next sandbox API.
 //!
-//! The API is [`contract`]. The types it shares with the API it replaces are
-//! exported here.
+//! This module is additive: it does not change the existing crate-root traits,
+//! specs, errors, or protocol v2. Providers must explicitly implement the
+//! guarantees in `docs/shared-contract.md` before advertising this contract.
+//! Serialization here defines common data, not a negotiated wire protocol.
 
-pub mod contract;
+mod admission;
+mod catalog;
+mod config;
+mod descriptor;
+mod error;
+mod execution;
 mod id;
+mod identity;
 #[doc(hidden)]
 #[expect(
     clippy::absolute_paths,
@@ -12,15 +20,44 @@ mod id;
 )]
 pub mod legacy;
 mod redact;
+mod runtime;
+mod schema;
+mod status;
+mod units;
 mod wire_time;
+mod workload;
 
-pub use contract::{
-    FileKind, Isolation, OutputLoss, SshAccessInfo, StopLevel, VncConnection, WorkspaceOwnership,
-    stop_signal,
+pub use catalog::{
+    CatalogDiagnostic, CatalogOptions, Found, ProviderFailure, ProviderHandle, Registry,
+    SandboxBuilder, Sandboxes, StaticEnvironments,
+};
+pub use config::{Environment, EnvironmentSource, PluginTrust, ProviderEntry};
+pub use descriptor::{
+    AccessScope, CapabilitySet, ContainerField, Descriptor, Durability, EndpointCapability,
+    Isolation, JsonSchema, Locality, Namespace, NamespaceScope, NetworkMode, PortSupport,
+    ProviderSchemas, ResourceCapability, SourceKind, TimerCapability,
+};
+pub use error::{Error, MutationOutcome, RemainingResource};
+pub use execution::{
+    ExecControls, ExecOutcome, ExecSpec, OutputLoss, OutputSink, OutputStream, StopLevel,
+    TerminalSize, Termination, stop_signal,
 };
 pub use id::{
     EnvironmentName, InvalidIdError, NamespaceId, ProviderKind, ProviderName, SandboxId,
     Sha256Digest, SnapshotId,
+};
+pub use identity::SandboxRef;
+pub use runtime::{
+    Activation, ByteStream, Containers, Endpoints, Expose, Exposure, FileEntry, FileKind,
+    FileRange, Files, Health, LabelFilter, OneShotImage, OneShotSpec, PluginLocation, Ports,
+    ProviderFactory, ProviderRuntime, Sandbox, SandboxSummary, SecretResolver, SecretValues,
+    SshAccessInfo, VncConnection, WorkloadAdmission,
+};
+pub use status::{SandboxState, ServiceAddress, Status};
+pub use units::{ParseUnitError, parse_duration_ms, parse_size_mib};
+pub use workload::{
+    ContainerSpec, NetworkPolicy, ReadinessCheck, Resources, SandboxSpec, ServiceSpec, Source,
+    Timers, WorkspaceOwnership,
 };
 
 #[cfg(doctest)]

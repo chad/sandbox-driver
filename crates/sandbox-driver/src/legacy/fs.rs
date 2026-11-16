@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-pub use crate::contract::FileKind;
+pub use crate::FileKind;
 use crate::legacy::capabilities::Capability;
 use crate::legacy::error::{Error, Result};
 

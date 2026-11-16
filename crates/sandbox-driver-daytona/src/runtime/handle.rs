@@ -14,17 +14,16 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
-    ByteStream, Containers, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
-    FileEntry, FileRange, Files, MutationOutcome, OneShotImage, OneShotSpec, OutputSink,
-    OutputStream, Ports, Resources, Sandbox, SandboxRef, SandboxState, Status, Termination,
-};
-use sandbox_driver::legacy;
 use sandbox_driver::legacy::{
     ExecControls as LegacyControls, ExecSpec as LegacySpec, ExecStreamingResult,
     OneShotImage as LegacyImage, OneShotSpec as LegacyOneShot, OutputStream as LegacyStream,
     PreviewUrls as _, Sandbox as LegacySandbox, SandboxState as LegacyState, SnapshotId,
     StdinSource, Termination as LegacyTermination, TransportError,
+};
+use sandbox_driver::{
+    ByteStream, Containers, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
+    FileEntry, FileRange, Files, MutationOutcome, OneShotImage, OneShotSpec, OutputSink,
+    OutputStream, Ports, Resources, Sandbox, SandboxRef, SandboxState, Status, Termination, legacy,
 };
 use tokio::io::AsyncReadExt;
 use tokio::sync::OnceCell;

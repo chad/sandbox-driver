@@ -6,11 +6,11 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Activation, Descriptor, Error, Health, LabelFilter, PluginLocation, ProviderFactory,
-    ProviderRuntime, ProviderSchemas, Sandbox, SandboxSummary, WorkloadAdmission,
+    ProviderKind, ProviderRuntime, ProviderSchemas, Sandbox, SandboxId, SandboxSummary,
+    WorkloadAdmission, legacy,
 };
-use sandbox_driver::{ProviderKind, SandboxId, legacy};
 use sandbox_driver_protocol::{Plugin, run_plugin};
 
 /// Serves `factory` over protocol version 3, reporting `kind` in place of

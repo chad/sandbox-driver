@@ -2,7 +2,7 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-pub use crate::contract::Isolation;
+pub use crate::Isolation;
 
 /// A capability a caller can preflight and an
 /// [`crate::legacy::Error::Unsupported`] can name. Serialized as a dotted path,

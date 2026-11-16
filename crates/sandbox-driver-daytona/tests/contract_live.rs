@@ -13,13 +13,13 @@ use std::{env, future};
 
 use async_trait::async_trait;
 use futures_util::FutureExt;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     ByteStream, CatalogOptions, Environment, EnvironmentName, Error, ExecControls, ExecSpec,
     LabelFilter, OneShotImage, OneShotSpec, OutputSink, ProviderEntry, ProviderName,
     ReadinessCheck, Registry, Sandbox, SandboxSpec, SandboxState, Sandboxes, SecretResolver,
     ServiceSpec, Source, StaticEnvironments, Termination,
 };
-use sandbox_driver_conformance::contract::{Commands, Conformance};
+use sandbox_driver_conformance::{Commands, Conformance};
 use sandbox_driver_daytona::DaytonaFactory;
 use tokio::io::AsyncReadExt;
 use tokio::time;
