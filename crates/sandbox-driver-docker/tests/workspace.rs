@@ -19,7 +19,8 @@ use bollard::container::{
     Config, CreateContainerOptions, InspectContainerOptions, KillContainerOptions,
     ListContainersOptions, StartContainerOptions,
 };
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Error, ExecControls, ExecSpec, OneShotSpec, OutputStream, SandboxFilter, SandboxProvider,
     SandboxSource, SandboxSpec, Termination,
 };
@@ -432,7 +433,7 @@ async fn a_one_shot_builds_from_the_workspace() {
         .expect("write context file");
     let tag = format!("sandbox-driver-one-shot-build:{}", process::id());
     let (controls, seen) = recording_controls();
-    let spec = OneShotSpec::new(sandbox_driver::OneShotImage::Build {
+    let spec = OneShotSpec::new(legacy::OneShotImage::Build {
         context:    "action".to_owned(),
         dockerfile: None,
         tag:        tag.clone(),

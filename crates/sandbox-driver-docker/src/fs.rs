@@ -22,7 +22,8 @@ use async_trait::async_trait;
 use bollard::container::{DownloadFromContainerOptions, UploadToContainerOptions};
 use bollard::errors::Error as DockerApiError;
 use futures_util::{StreamExt, stream};
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     DerivedFs, DirEntry, Error, Exec, ExecSpec, FileMetadata, Filesystem, ResourceKind, Result,
 };
 use tokio::fs;
@@ -256,7 +257,7 @@ impl Filesystem for DockerFs {
         err(level = "debug")
     )]
     async fn read_range(&self, path: &str, offset: u64, length: Option<u64>) -> Result<Vec<u8>> {
-        let mut bytes = sandbox_driver::BoundedBuffer::new(sandbox_driver::DEFAULT_BUFFER_BYTES);
+        let mut bytes = legacy::BoundedBuffer::new(legacy::DEFAULT_BUFFER_BYTES);
         let outcome = self.read_range_to(path, offset, length, &mut bytes).await;
         bytes.finish(outcome)
     }
@@ -420,7 +421,7 @@ mod tests {
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     use bollard::Docker;
-    use sandbox_driver::{ExecControls, ExecResult, ExecStreamingResult, Termination};
+    use sandbox_driver::legacy::{ExecControls, ExecResult, ExecStreamingResult, Termination};
 
     use super::*;
 

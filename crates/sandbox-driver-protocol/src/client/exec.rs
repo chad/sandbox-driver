@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Error, Exec, ExecControls, ExecResult, ExecSpec, ExecStreamingResult, IncompleteOperation,
     OneShot, OneShotSpec, OutputCaptureBuffer, OutputStream, Result, SandboxId, SpawnSpec,
     StderrTail, StdinReader, StdioProcess, StdioProcessHandle, Termination, TransportError,

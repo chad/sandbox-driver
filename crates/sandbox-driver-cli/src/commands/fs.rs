@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sandbox_driver::{Capability, EventContext, SandboxProvider};
+use sandbox_driver::legacy::{Capability, EventContext, SandboxProvider};
 
 use super::act_on_sandbox;
 use crate::cli::{FsCommand, OutputFormat};

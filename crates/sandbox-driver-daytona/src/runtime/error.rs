@@ -8,8 +8,8 @@
 use std::error::Error as StdError;
 
 use daytona_sdk::DaytonaError;
-use sandbox_driver::Error as Legacy;
-use sandbox_driver::contract::{Error, MutationOutcome, RemainingResource};
+use sandbox_driver::legacy::Error as Legacy;
+use sandbox_driver::{Error, MutationOutcome, RemainingResource};
 
 use crate::cleanup::INCOMPLETE_CLEANUP_CODE;
 
@@ -133,7 +133,7 @@ mod tests {
     use std::collections::HashMap;
     use std::time::Duration;
 
-    use sandbox_driver::{AuthError, ProviderError, ProviderKind, ResourceKind};
+    use sandbox_driver::legacy::{AuthError, ProviderError, ProviderKind, ResourceKind};
 
     use super::*;
 

@@ -22,19 +22,19 @@
 //! image that serves them must also provide `bash` on `PATH` and a Linux
 //! userland with `stat`, `find`, and `base64`. Because Docker advertises
 //! the normalized Search, Git, and background-services facets, the image
-//! must also provide the commands documented by [`sandbox_driver::Search`]
-//! and [`sandbox_driver::Services`], plus `git`, on `PATH`. A program that
-//! needs none of that — Petri's step runner, which execs, reads and writes
-//! files, and runs one-shot containers — runs on any Linux image with a
-//! POSIX userland, Alpine included.
+//! must also provide the commands documented by
+//! [`sandbox_driver::legacy::Search`] and [`sandbox_driver::legacy::Services`],
+//! plus `git`, on `PATH`. A program that needs none of that — Petri's step
+//! runner, which execs, reads and writes files, and runs one-shot containers —
+//! runs on any Linux image with a POSIX userland, Alpine included.
 //!
 //! # The workspace
 //!
 //! The sandbox owns its workspace: the working directory is a Docker
 //! volume created with the container and removed with it, unless the
 //! caller's `provider_config.binds` mounts a host directory there. Every
-//! [`sandbox_driver::OneShot`] container the sandbox runs mounts the same
-//! volume at the same path and joins the sandbox container's network
+//! [`sandbox_driver::legacy::OneShot`] container the sandbox runs mounts the
+//! same volume at the same path and joins the sandbox container's network
 //! namespace, so it sees the workspace, the sidecars, and the daemon host
 //! exactly as the sandbox does. `stop` and `delete` end the sandbox's
 //! one-shot containers first.
@@ -71,7 +71,7 @@ mod runtime;
 mod sandbox;
 mod sidecars;
 
-use sandbox_driver::{Capabilities, Isolation, OneShotCaps, PtyCaps};
+use sandbox_driver::legacy::{Capabilities, Isolation, OneShotCaps, PtyCaps};
 
 pub use crate::config::{BindMount, DockerProviderConfig, Health, RegistryAuth, Sidecar};
 pub use crate::exec::DockerExec;

@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, HashMap};
 use bollard::models::{
     ContainerInspectResponse, ContainerStateStatusEnum, Mount, MountPointTypeEnum, MountTypeEnum,
 };
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     BASH_ENV_VAR, NetworkPolicy, SandboxId, SandboxKind, SandboxState, SandboxStatus,
 };
 

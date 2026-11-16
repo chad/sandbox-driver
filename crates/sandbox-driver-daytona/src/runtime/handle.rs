@@ -14,16 +14,16 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
-    ByteStream, Containers, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
-    FileEntry, FileRange, Files, MutationOutcome, OneShotImage, OneShotSpec, OutputSink,
-    OutputStream, Ports, Resources, Sandbox, SandboxRef, SandboxState, Status, Termination,
-};
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     ExecControls as LegacyControls, ExecSpec as LegacySpec, ExecStreamingResult,
     OneShotImage as LegacyImage, OneShotSpec as LegacyOneShot, OutputStream as LegacyStream,
     PreviewUrls as _, Sandbox as LegacySandbox, SandboxState as LegacyState, SnapshotId,
     StdinSource, Termination as LegacyTermination, TransportError,
+};
+use sandbox_driver::{
+    ByteStream, Containers, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
+    FileEntry, FileRange, Files, MutationOutcome, OneShotImage, OneShotSpec, OutputSink,
+    OutputStream, Ports, Resources, Sandbox, SandboxRef, SandboxState, Status, Termination, legacy,
 };
 use tokio::io::AsyncReadExt;
 use tokio::sync::OnceCell;
@@ -41,7 +41,7 @@ use crate::{DaytonaSandbox, TRANSITION_BUDGET};
 const WATCH_POLL: Duration = Duration::from_secs(2);
 /// Bounds every input taken as one buffer: nested stdin and file writes.
 /// It is the legacy filesystem's own write limit.
-const BUFFER_LIMIT: usize = sandbox_driver::DEFAULT_BUFFER_BYTES;
+const BUFFER_LIMIT: usize = legacy::DEFAULT_BUFFER_BYTES;
 const DEFAULT_SIGNED_TTL: Duration = Duration::from_secs(3600);
 
 pub(super) struct Workload {
@@ -183,7 +183,7 @@ impl Workload {
     /// as `Killed`, and a failure that leaves its fate unknown is `Lost`.
     async fn fenced(
         &self,
-        work: impl Future<Output = sandbox_driver::Result<ExecStreamingResult>>,
+        work: impl Future<Output = legacy::Result<ExecStreamingResult>>,
         admitted: Option<String>,
     ) -> Result<ExecOutcome, Error> {
         let result = tokio::select! {
@@ -207,8 +207,7 @@ impl Workload {
                 // answers the output poll of a dead command with one.
                 let unsent = matches!(
                     error,
-                    sandbox_driver::Error::InvalidSpec { .. }
-                        | sandbox_driver::Error::Unsupported { .. }
+                    legacy::Error::InvalidSpec { .. } | legacy::Error::Unsupported { .. }
                 );
                 let error = classify("running command", error);
                 if unsent {
@@ -241,7 +240,7 @@ impl Workload {
                 let delivery = sink(stream, bytes);
                 Box::pin(async move {
                     delivery.await.map_err(|error| {
-                        sandbox_driver::Error::Transport(TransportError::new(format!(
+                        legacy::Error::Transport(TransportError::new(format!(
                             "output sink failed: {error}"
                         )))
                     })
@@ -431,7 +430,7 @@ pub(super) fn public_labels(labels: &HashMap<String, String>) -> BTreeMap<String
         .collect()
 }
 
-fn contract_resources(resources: Option<sandbox_driver::Resources>) -> Resources {
+fn contract_resources(resources: Option<legacy::Resources>) -> Resources {
     let Some(resources) = resources else {
         return Resources::default();
     };

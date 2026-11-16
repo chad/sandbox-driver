@@ -6,7 +6,8 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Capabilities, Error, EventContext, HealthStatus, LogSink, ProviderHealth, ProviderKind, Result,
     Sandbox, SandboxFilter, SandboxId, SandboxSpec, SandboxStatus, SnapshotFilter, SnapshotId,
     SnapshotProvider, SnapshotSpec, SnapshotStatus, TransportError, VolumeId, VolumeProvider,
@@ -286,7 +287,7 @@ impl PluginProvider {
 }
 
 #[async_trait]
-impl sandbox_driver::SandboxProvider for PluginProvider {
+impl legacy::SandboxProvider for PluginProvider {
     fn kind(&self) -> &ProviderKind {
         &self.kind
     }

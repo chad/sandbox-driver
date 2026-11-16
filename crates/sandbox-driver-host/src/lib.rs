@@ -18,8 +18,8 @@
 //!
 //! The Host provider advertises normalized Search, Git, and
 //! background-services facets. The host environment must therefore provide
-//! the commands documented by [`sandbox_driver::Search`] and
-//! [`sandbox_driver::Services`], plus `git`, on `PATH`.
+//! the commands documented by [`sandbox_driver::legacy::Search`] and
+//! [`sandbox_driver::legacy::Services`], plus `git`, on `PATH`.
 //!
 //! # Runtime behavior
 //!
@@ -65,7 +65,8 @@ use std::time::{Duration, SystemTime};
 use std::{env, io, iter};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Action, Capabilities, Error, EventContext, EventEmitter, EventSubject, Exec, ExecSpec,
     Filesystem, HealthStatus, Isolation, LifecycleTimers, PlatformInfo, PreviewUrls, Progress,
     ProgressCode, ProviderHealth, ProviderKind, ResourceKind, Resources, Result, Sandbox,
@@ -499,10 +500,7 @@ fn validate_supported_creation_fields(spec: &SandboxSpec) -> Result<()> {
             "the host provider always runs as the calling user",
         ));
     }
-    if !matches!(
-        &spec.network,
-        sandbox_driver::NetworkPolicy::ProviderDefault
-    ) {
+    if !matches!(&spec.network, legacy::NetworkPolicy::ProviderDefault) {
         return Err(Error::invalid_spec(
             "network",
             "the host provider does not manage host networking",

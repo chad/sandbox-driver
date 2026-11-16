@@ -1,13 +1,13 @@
 # sandbox-driver
 
-> **Status:** This is the specification of the `Sandboxes` API, which lives in
-> `sandbox_driver::contract` until it moves to the crate root, and it changes in
-> the same PR as that module. Host, Docker, and Daytona implement it as
+> **Status:** This is the specification of the `Sandboxes` API, which the
+> `sandbox_driver` crate root exports, and it changes in the same PR as that
+> code. Host, Docker, and Daytona implement it as
 > built-ins, and protocol version 3 loads third-party plugins. The
 > [CLI](#cli) section is not implemented yet: until the CLI is ported, it runs
 > every provider as a protocol version 2 plugin, as the
 > [CLI guide](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/cli.md) describes.
-> The older crate-root provider API ([design](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md)),
+> The older provider API ([design](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md)),
 > protocol version 2, and the provider executables are still in the tree but are
 > being removed; if you need them, pin tag
 > [`v2`](https://github.com/lithoscomputer/sandbox-driver/tree/v2).
@@ -519,7 +519,7 @@ The suite also verifies that exec and files address the requested workload rathe
 ## Testing
 
 ```rust
-let sandboxes = sandbox_driver_testing::contract::fake();
+let sandboxes = sandbox_driver_testing::fake();
 ```
 
 The fake lives in `sandbox-driver-testing`, which consumers add as a
@@ -572,7 +572,7 @@ Prior art: Jupyter kernelspecs and `jupyter_client`, Kubernetes CRI and RuntimeC
 
 ### Current additive implementation
 
-`contract::Sandboxes` requires an explicit `Registry`, `SecretResolver` and
+`Sandboxes` requires an explicit `Registry`, `SecretResolver` and
 `CatalogOptions`; no real provider is registered by core. `Registry::builtin`
 registers an adapter, and `Registry::plugins` supplies the ordinary plugin
 loader. Host, Docker and Daytona are built-ins, and their reserved kinds never
@@ -609,7 +609,7 @@ remain different refs. `unavailable` includes all failed entries and `failures`
 retains the structured reason; neither implies absence or authorizes replay.
 
 The common new-contract suite is
-`sandbox_driver_conformance::contract::Conformance`. It accepts a catalog,
+`sandbox_driver_conformance::Conformance`. It accepts a catalog,
 environment, and two command fixtures, and checks identity/inventory, binary
 file ranges and preservation, streamed output, stop/start fencing and confirmed
 cleanup. It reports its executed checks explicitly. Passing it alone is not

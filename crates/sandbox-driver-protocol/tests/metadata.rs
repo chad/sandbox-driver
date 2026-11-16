@@ -9,7 +9,7 @@ use std::{env, fs};
 
 use nix::sys::signal::kill;
 use nix::unistd::Pid;
-use sandbox_driver::contract::{Error, PluginLocation, PluginTrust, ProviderName, ProviderSchemas};
+use sandbox_driver::{Error, PluginLocation, PluginTrust, ProviderName, ProviderSchemas};
 use sandbox_driver_protocol::file_sha256;
 use sandbox_driver_protocol::metadata::{DiscoveryLimits, SchemaDiscovery, write_schema};
 use serde_json::json;

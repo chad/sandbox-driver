@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::io;
 use std::io::Cursor;
 
-use sandbox_driver::{Error, Result};
+use sandbox_driver::legacy::{Error, Result};
 use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::sync::mpsc;
 use tokio_util::bytes::Bytes;

@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use bollard::Docker;
 use bollard::container::ListContainersOptions;
 use bollard::models::ContainerInspectResponse;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Action, Capabilities, Error, EventContext, EventEmitter, EventSubject, Exec, HealthStatus,
     OperationReporter, Progress, ProgressCode, ProviderError, ProviderHealth, ProviderKind,
     ResourceKind, Result, Sandbox, SandboxFilter, SandboxId, SandboxProvider, SandboxSpec,

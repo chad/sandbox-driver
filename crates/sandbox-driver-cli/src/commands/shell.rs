@@ -4,7 +4,7 @@ use std::process::Stdio;
 use anyhow::{Context as _, Result};
 #[cfg(unix)]
 use nix::sys::termios::{SetArg, Termios, cfmakeraw, tcgetattr, tcsetattr};
-use sandbox_driver::{PtyOptions, PtySession, Sandbox};
+use sandbox_driver::legacy::{PtyOptions, PtySession, Sandbox};
 use tokio::io::{
     AsyncReadExt as _, AsyncWriteExt as _, stdin as async_stdin, stdout as async_stdout,
 };

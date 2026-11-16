@@ -11,7 +11,8 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::time::Duration;
 
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Capabilities, CaptureStats, CorrelationId, DirEntry, Error, Event, ExecResult, ExecSpec,
     FileMetadata, ForkOptions, GitCloneOptions, LifecycleTimers, LogSource, NetworkPolicy,
     OneShotSpec, OutputLoss, OutputSanitization, PlatformInfo, ProviderKind, PtyOptions, PtySize,
@@ -891,22 +892,22 @@ pub struct SnapshotBuildLogsParams {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SnapshotStatusResult {
-    pub status: sandbox_driver::SnapshotStatus,
+    pub status: legacy::SnapshotStatus,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SnapshotListParams {
-    pub filter: sandbox_driver::SnapshotFilter,
+    pub filter: legacy::SnapshotFilter,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SnapshotListResult {
-    pub snapshots: Vec<sandbox_driver::SnapshotStatus>,
+    pub snapshots: Vec<legacy::SnapshotStatus>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VolumeCreateParams {
-    pub spec:   sandbox_driver::VolumeSpec,
+    pub spec:   legacy::VolumeSpec,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub events: Option<EventRequest>,
 }
@@ -925,12 +926,12 @@ pub struct VolumeIdResult {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VolumeStatusResult {
-    pub status: sandbox_driver::VolumeStatus,
+    pub status: legacy::VolumeStatus,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VolumeListResult {
-    pub volumes: Vec<sandbox_driver::VolumeStatus>,
+    pub volumes: Vec<legacy::VolumeStatus>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -948,7 +949,7 @@ pub struct SignedPreviewUrlParams {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PreviewUrlResult {
-    pub preview: sandbox_driver::PreviewUrl,
+    pub preview: legacy::PreviewUrl,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -980,7 +981,7 @@ pub struct VncResult {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HealthResult {
-    pub health: sandbox_driver::ProviderHealth,
+    pub health: legacy::ProviderHealth,
 }
 
 /// Empty result for side-effect-only methods.

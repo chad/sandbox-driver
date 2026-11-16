@@ -1,6 +1,4 @@
-use sandbox_driver::contract::{
-    Descriptor, Error, ExecSpec, OneShotImage, OneShotSpec, SandboxSpec,
-};
+use sandbox_driver::{Descriptor, Error, ExecSpec, OneShotImage, OneShotSpec, SandboxSpec};
 use serde_json::json;
 
 fn descriptor() -> Descriptor {

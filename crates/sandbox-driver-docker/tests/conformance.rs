@@ -6,8 +6,8 @@
 
 use std::sync::Arc;
 
-use sandbox_driver::{SandboxProvider, SandboxSource, SandboxSpec};
-use sandbox_driver_conformance::{Conformance, SpecFactory};
+use sandbox_driver::legacy::{SandboxProvider, SandboxSource, SandboxSpec};
+use sandbox_driver_conformance::legacy::{Conformance, SpecFactory};
 use sandbox_driver_docker::DockerProvider;
 use sandbox_driver_protocol::{PluginProvider, serve};
 use tokio::io::{duplex, split};

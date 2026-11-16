@@ -15,7 +15,7 @@ use std::{mem, process};
 use daytona_sdk::{
     ProcessService, Sandbox as SdkSandbox, SessionCommandLogsResult, SessionExecuteResult,
 };
-use sandbox_driver::{Error, OutputCaptureBuffer, Result, StopLevel, Termination};
+use sandbox_driver::legacy::{Error, OutputCaptureBuffer, Result, StopLevel, Termination};
 use tokio::runtime::Handle;
 use tokio::time;
 use tokio_util::sync::CancellationToken;

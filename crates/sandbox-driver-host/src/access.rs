@@ -2,7 +2,7 @@
 //! the port is the caller's own loopback port.
 
 use async_trait::async_trait;
-use sandbox_driver::{Error, PreviewUrl, PreviewUrls, Result};
+use sandbox_driver::legacy::{Error, PreviewUrl, PreviewUrls, Result};
 
 /// Preview URLs for a directory-backed sandbox on the local machine.
 pub(crate) struct HostPreview;

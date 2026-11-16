@@ -5,7 +5,7 @@ use std::mem;
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{Error, Result, TransportError};
+use sandbox_driver::legacy::{Error, Result, TransportError};
 use tokio::io::{AsyncBufRead, AsyncBufReadExt};
 use tokio::sync::{OwnedSemaphorePermit, Semaphore, mpsc};
 use tokio::time;

@@ -16,7 +16,7 @@ use std::time::Duration;
 use nix::sys::signal::{Signal, killpg};
 #[cfg(unix)]
 use nix::unistd::Pid;
-use sandbox_driver::{Error, ExecResult, Result, Termination};
+use sandbox_driver::legacy::{Error, ExecResult, Result, Termination};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command};
 #[cfg(unix)]
 use tokio::time;
@@ -90,7 +90,7 @@ pub(crate) struct HostChild {
 
 impl HostChild {
     /// SIGTERMs the process group, once, and returns: the
-    /// [`sandbox_driver::ExecControls::term`] path. Whether the command
+    /// [`sandbox_driver::legacy::ExecControls::term`] path. Whether the command
     /// ends is the command's business; the caller escalates to `kill` if
     /// it must. Platforms without process groups have no term signal.
     pub(crate) fn term(&self) {
@@ -99,7 +99,7 @@ impl HostChild {
     }
 
     /// SIGKILLs the process group and the child directly: the
-    /// [`sandbox_driver::ExecControls::kill`] path, the timeout, and a
+    /// [`sandbox_driver::legacy::ExecControls::kill`] path, the timeout, and a
     /// failing sink.
     ///
     /// The direct kill is the guarantee: a command that moved itself out of

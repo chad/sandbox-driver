@@ -8,7 +8,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use bollard::container::{StartContainerOptions, StopContainerOptions};
 use bollard::models::ContainerInspectResponse;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Action, Capabilities, Error, EventEmitter, EventSubject, Exec, ExecSpec, Filesystem, OneShot,
     PlatformInfo, PreviewUrls, ProviderError, Pty, ResourceKind, Result, Sandbox, SandboxId,
     SandboxKind, SandboxState, SandboxStatus, ShellCommand,

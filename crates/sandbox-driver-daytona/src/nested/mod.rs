@@ -15,7 +15,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capabilities, DirEntry, Error, Exec, ExecControls, ExecFailure, ExecResult, ExecSpec,
     ExecStreamingResult, FileMetadata, Filesystem, OneShotCaps, Pty, PtyOptions, PtySession,
     Result, SandboxSpec, SpawnSpec, StdioProcess,
@@ -893,7 +893,7 @@ impl Filesystem for NestedDocker {
 mod tests {
     use std::time::Duration;
 
-    use sandbox_driver::{Capability, OneShot, OneShotSpec, Termination};
+    use sandbox_driver::legacy::{Capability, OneShot, OneShotSpec, Termination};
     use sandbox_driver_docker_config::DockerProviderConfig;
     use tokio_util::sync::CancellationToken;
 

@@ -4,7 +4,7 @@ use std::io;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use sandbox_driver::{Error, ResourceKind, SandboxProvider, SandboxSource, SandboxSpec};
+use sandbox_driver::legacy::{Error, ResourceKind, SandboxProvider, SandboxSource, SandboxSpec};
 use sandbox_driver_host::HostProvider;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 

@@ -8,7 +8,7 @@ use std::process::{self, Stdio};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     ExecControls, ExecSpec, SandboxFilter, SandboxProvider, SandboxSource, SandboxSpec, Termination,
 };
 use sandbox_driver_host::HostProvider;

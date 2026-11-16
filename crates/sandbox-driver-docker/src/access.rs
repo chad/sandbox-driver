@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sandbox_driver::{Result, ShellCommand};
+use sandbox_driver::legacy::{Result, ShellCommand};
 
 use crate::daemon::shell_quote;
 

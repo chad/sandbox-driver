@@ -10,7 +10,8 @@ use daytona_api_client::models::{
     SandboxClass as DaytonaCreateSandboxClass, SnapshotDto,
 };
 use daytona_sdk::{CreateSnapshotParams, DaytonaError, DockerImage, ImageSource};
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Action, Capability, Error, EventContext, EventEmitter, EventSubject, LogSink, ProviderError,
     ProviderKind, ResourceKind, Resources, Result, SandboxId, SandboxKind, SandboxState,
     SnapshotFilter, SnapshotId, SnapshotMode, SnapshotProvider, SnapshotSource, SnapshotSpec,
@@ -288,9 +289,7 @@ impl SnapshotProvider for DaytonaSnapshots {
                 Action::Create,
                 |reporter| async move {
                     reporter
-                        .progress(sandbox_driver::Progress::new(
-                            sandbox_driver::ProgressCode::SNAPSHOT_BUILD,
-                        ))
+                        .progress(legacy::Progress::new(legacy::ProgressCode::SNAPSHOT_BUILD))
                         .await;
                     let id = match &spec.source {
                         SnapshotSource::Sandbox { id, mode } => {

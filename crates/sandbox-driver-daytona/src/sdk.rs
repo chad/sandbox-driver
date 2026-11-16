@@ -11,7 +11,7 @@ use daytona_api_client::models::{
     VolumeState as ApiVolumeState,
 };
 use daytona_sdk::{Client, DaytonaError, Sandbox};
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     AuthError, Error, ProviderError, ProviderKind, ResourceKind, Result, SandboxKind, SandboxState,
     SnapshotState, VolumeState,
 };

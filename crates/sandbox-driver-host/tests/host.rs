@@ -8,7 +8,8 @@ use std::time::{Duration, Instant};
 use std::{env, process};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     Action, Capability, Error, Event, EventBody, EventContext, EventObserver, ExecControls,
     ExecSpec, Git, GitCheckoutOptions, GitCommitOptions, GrepOptions, NetworkPolicy, OutputStream,
     OwnedProvider, Ownership, SandboxFilter, SandboxId, SandboxProvider, SandboxSource,
@@ -758,7 +759,7 @@ async fn pinned_clone_attaches_the_admitted_branch() {
     assert_eq!(pinned.len(), 40, "sha: {pinned}");
 
     let git = sandbox.git().expect("git facet");
-    let mut options = sandbox_driver::GitCloneOptions::default();
+    let mut options = legacy::GitCloneOptions::default();
     options.branch = Some("main".to_owned());
     options.commit = Some(pinned.clone());
     options.depth = Some(1);
@@ -808,7 +809,7 @@ async fn tag_pinned_clone_attaches_the_admitted_branch() {
     assert_eq!(tagged.len(), 40, "sha: {tagged}");
 
     let git = sandbox.git().expect("git facet");
-    let mut options = sandbox_driver::GitCloneOptions::default();
+    let mut options = legacy::GitCloneOptions::default();
     options.branch = Some("main".to_owned());
     options.tag = Some("v1.0.0".to_owned());
     options.depth = Some(1);
@@ -831,7 +832,7 @@ async fn tag_pinned_clone_attaches_the_admitted_branch() {
     assert_eq!(head.stdout_lossy().trim(), tagged);
 
     // A missing tag fails instead of leaving a branch-head checkout.
-    let mut missing = sandbox_driver::GitCloneOptions::default();
+    let mut missing = legacy::GitCloneOptions::default();
     missing.branch = Some("main".to_owned());
     missing.tag = Some("v9.9.9".to_owned());
     git.clone_repo(&format!("file://{workspace}/src"), "missing", &missing)

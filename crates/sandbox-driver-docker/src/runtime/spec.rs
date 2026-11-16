@@ -13,11 +13,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use bollard::models::HealthConfig;
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{self, SandboxSource};
+use sandbox_driver::{
     ContainerSpec, Error, NetworkPolicy, ReadinessCheck, SandboxSpec, SecretValues, ServiceSpec,
     Source,
 };
-use sandbox_driver::{self as legacy, SandboxSource};
 use sandbox_driver_docker_config::{BindMount, DockerProviderConfig, RegistryAuth, Sidecar};
 use serde::Deserialize;
 

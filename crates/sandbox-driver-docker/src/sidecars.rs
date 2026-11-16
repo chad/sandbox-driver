@@ -36,7 +36,7 @@ use bollard::network::{
     CreateNetworkOptions, DisconnectNetworkOptions, InspectNetworkOptions, ListNetworksOptions,
 };
 use futures_util::StreamExt;
-use sandbox_driver::{Error, ProviderError, Result};
+use sandbox_driver::legacy::{Error, ProviderError, Result};
 use tokio::time;
 
 use crate::config::{Sidecar, to_health_config};

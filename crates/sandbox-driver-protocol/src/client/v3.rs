@@ -1,5 +1,5 @@
 //! Host side of protocol version 3: a configured plugin child adapted to
-//! `sandbox_driver::contract::ProviderRuntime`.
+//! `sandbox_driver::Provider`.
 //!
 //! Each launch is a *generation*. Handles keep the generation that issued
 //! them and fail with `Stale` once it ends. A runtime call after a crash
@@ -17,13 +17,13 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
+use sandbox_driver::legacy::{SandboxId, StopLevel, TransportError};
+use sandbox_driver::{
     ByteStream, Descriptor, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
     FileEntry, FileRange, Files, Health, LabelFilter, MutationOutcome, OutputStream, Ports,
-    ProviderName, ProviderRuntime, ProviderSchemas, Sandbox, SandboxRef, SandboxSummary, Status,
-    TerminalSize, WorkloadAdmission,
+    Provider, ProviderName, ProviderSchemas, Sandbox, SandboxRef, SandboxSummary, Status,
+    TerminalSize, WorkloadAdmission, legacy,
 };
-use sandbox_driver::{SandboxId, StopLevel, TransportError};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -349,7 +349,7 @@ impl PluginRuntime {
 }
 
 #[async_trait]
-impl ProviderRuntime for PluginRuntime {
+impl Provider for PluginRuntime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         Ok(self.generation().await?.descriptor.clone())
     }
@@ -540,7 +540,7 @@ async fn exec(
                     FrameKind::Stderr => OutputStream::Stderr,
                     FrameKind::Eof => break,
                     _ => {
-                        return Err(Failure::Local(sandbox_driver::Error::Transport(
+                        return Err(Failure::Local(legacy::Error::Transport(
                             TransportError::new("unexpected frame on exec output"),
                         )));
                     }
@@ -570,7 +570,7 @@ async fn exec(
     let call = async {
         let value = client.request(w::EXEC, &params).await?;
         serde_json::from_value::<ExecOutcome>(value).map_err(|_| {
-            Failure::Local(sandbox_driver::Error::Transport(TransportError::new(
+            Failure::Local(legacy::Error::Transport(TransportError::new(
                 "the plugin returned an invalid exec outcome",
             )))
         })
@@ -718,7 +718,7 @@ impl Files for PluginFiles {
                             }
                             FrameKind::Eof => break,
                             _ => {
-                                return Err(Failure::Local(sandbox_driver::Error::Transport(
+                                return Err(Failure::Local(legacy::Error::Transport(
                                     TransportError::new("unexpected frame on file output"),
                                 )));
                             }
@@ -768,7 +768,7 @@ impl Files for PluginFiles {
             let mut buffer = vec![0; 64 * 1024];
             loop {
                 let count = bytes.read(&mut buffer).await.map_err(|error| {
-                    Failure::Local(sandbox_driver::Error::io("reading the upload", error))
+                    Failure::Local(legacy::Error::io("reading the upload", error))
                 })?;
                 if count == 0 {
                     break;

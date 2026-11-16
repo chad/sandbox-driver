@@ -6,11 +6,10 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sandbox_driver::contract::{
-    Activation, Descriptor, Error, Health, LabelFilter, PluginLocation, ProviderFactory,
-    ProviderRuntime, ProviderSchemas, Sandbox, SandboxSummary, WorkloadAdmission,
+use sandbox_driver::{
+    Activation, Descriptor, Error, Health, LabelFilter, PluginLocation, Provider, ProviderFactory,
+    ProviderKind, ProviderSchemas, Sandbox, SandboxId, SandboxSummary, WorkloadAdmission, legacy,
 };
-use sandbox_driver::{ProviderKind, SandboxId};
 use sandbox_driver_protocol::{Plugin, run_plugin};
 
 /// Serves `factory` over protocol version 3, reporting `kind` in place of
@@ -19,7 +18,7 @@ pub async fn serve_renamed(
     kind: &str,
     schemas: ProviderSchemas,
     factory: Arc<dyn ProviderFactory>,
-) -> sandbox_driver::Result<()> {
+) -> legacy::Result<()> {
     let schemas = ProviderSchemas {
         kind: ProviderKind::try_new(kind).expect("valid kind"),
         ..schemas
@@ -42,21 +41,21 @@ impl ProviderFactory for Renamed {
         Ok(self.schemas.clone())
     }
 
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
-        Ok(Arc::new(RenamedRuntime {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
+        Ok(Arc::new(RenamedProvider {
             schemas: self.schemas.clone(),
             runtime: self.factory.activate(activation).await?,
         }))
     }
 }
 
-struct RenamedRuntime {
+struct RenamedProvider {
     schemas: ProviderSchemas,
-    runtime: Arc<dyn ProviderRuntime>,
+    runtime: Arc<dyn Provider>,
 }
 
 #[async_trait]
-impl ProviderRuntime for RenamedRuntime {
+impl Provider for RenamedProvider {
     async fn describe(&self) -> Result<Descriptor, Error> {
         Ok(Descriptor {
             schemas: self.schemas.clone(),

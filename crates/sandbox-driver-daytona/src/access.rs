@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     PreviewUrl, PreviewUrls, Result, SshAccess, SshAccessInfo, Vnc, VncConnection, WebTerminal,
 };
 

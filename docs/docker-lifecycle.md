@@ -152,7 +152,7 @@ target/debug/lithos-sandbox --provider docker sandbox delete "$id"
 ## Shared contract runtime
 
 `sandbox_driver_docker::DockerFactory` registers Docker as a built-in with a
-`contract::Registry`. An entry's only `config` key is `host` (`unix://`,
+`sandbox_driver::Registry`. An entry's only `config` key is `host` (`unix://`,
 `tcp://` or `http://`; default `unix:///var/run/docker.sock`); nothing is read
 from the ambient environment. The runtime drives the same container plan,
 claims and stop fence described above, so legacy and new-contract clients
@@ -200,7 +200,7 @@ shell-command endpoint. No timers are enforced, so any timer request is
   primary is already gone removes them by that label before reporting success.
   Neither inventory reports sidecars or one-shots as sandboxes.
 
-`cargo test -p sandbox-driver-docker --test contract -- --ignored` runs the
+`cargo test -p sandbox-driver-docker --test provider -- --ignored` runs the
 shared conformance suite (with a second activated catalog for the
 cross-instance fence), the services and one-shot workload, label round-trip
 and exec on a stopped sandbox, refusal before admission, and reconciliation

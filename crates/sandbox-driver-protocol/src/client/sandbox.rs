@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capabilities, Capability, DerivedGit, Error, EventContext, Exec, Filesystem, ForkOptions, Git,
     GitBranches, GitCheckoutOptions, GitCloneOptions, GitCommit, GitCommitOptions, GitCredentials,
     GitDiffEntry, GitDiffOptions, GitFetchOptions, GitLogOptions, GitNumstat, GitPushOptions,

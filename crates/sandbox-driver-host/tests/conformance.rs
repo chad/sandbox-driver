@@ -2,11 +2,11 @@
 
 use std::sync::Arc;
 
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capabilities, EventContext, OneShotCaps, ProviderKind, Result, Sandbox, SandboxFilter,
     SandboxId, SandboxProvider, SandboxSource, SandboxSpec, SandboxStatus,
 };
-use sandbox_driver_conformance::{Conformance, Outcome, SpecFactory};
+use sandbox_driver_conformance::legacy::{Conformance, Outcome, SpecFactory};
 use sandbox_driver_host::HostProvider;
 
 #[tokio::test(flavor = "multi_thread")]

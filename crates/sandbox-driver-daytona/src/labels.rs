@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use sandbox_driver::{Error, Result};
+use sandbox_driver::legacy::{Error, Result};
 use sandbox_driver_daytona_config::DockerExecutionTarget;
 
 pub(crate) const MANAGED_LABEL: &str = "sh.sandbox-driver.managed";

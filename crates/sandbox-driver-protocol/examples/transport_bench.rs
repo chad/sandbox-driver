@@ -9,7 +9,7 @@ use std::{env, process};
 
 use async_trait::async_trait;
 use clap::{Parser, ValueEnum};
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Capabilities, DirEntry, Error, EventContext, Exec, ExecControls, ExecResult, ExecSpec,
     ExecStreamingResult, FileMetadata, Filesystem, HealthStatus, Isolation, OutputStream,
     PlatformInfo, ProviderHealth, ProviderKind, Result, Sandbox, SandboxFilter, SandboxId,

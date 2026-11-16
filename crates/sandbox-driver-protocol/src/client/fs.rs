@@ -6,7 +6,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy;
+use sandbox_driver::legacy::{
     DirEntry, Error, FileMetadata, Filesystem, Result, SandboxId, TransportError,
 };
 use tokio::fs as tokio_fs;
@@ -136,15 +137,13 @@ impl SandboxFs {
 #[async_trait]
 impl Filesystem for SandboxFs {
     async fn read(&self, path: &str) -> Result<Vec<u8>> {
-        let mut content =
-            sandbox_driver::BoundedBuffer::new(self.client.limits.buffered_value_bytes);
+        let mut content = legacy::BoundedBuffer::new(self.client.limits.buffered_value_bytes);
         let outcome = self.read_to(path, &mut content).await;
         content.finish(outcome)
     }
 
     async fn read_range(&self, path: &str, offset: u64, length: Option<u64>) -> Result<Vec<u8>> {
-        let mut content =
-            sandbox_driver::BoundedBuffer::new(self.client.limits.buffered_value_bytes);
+        let mut content = legacy::BoundedBuffer::new(self.client.limits.buffered_value_bytes);
         let outcome = self
             .read_through_channel(path, Some(offset), length, &mut content)
             .await;

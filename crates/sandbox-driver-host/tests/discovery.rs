@@ -5,7 +5,9 @@
 use std::path::Path;
 use std::time::Duration;
 
-use sandbox_driver::{Error, ExecSpec, ProviderKind, SandboxProvider, SandboxSource, SandboxSpec};
+use sandbox_driver::legacy::{
+    Error, ExecSpec, ProviderKind, SandboxProvider, SandboxSource, SandboxSpec,
+};
 use sandbox_driver_protocol::{PluginConfig, file_sha256, launch_plugin};
 
 fn binary() -> &'static str {

@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use sandbox_driver::{Error, LogSink, Result, TransportError};
+use sandbox_driver::legacy::{Error, LogSink, Result, TransportError};
 use serde::Serialize;
 use tokio::sync::OwnedSemaphorePermit;
 use tokio::time;

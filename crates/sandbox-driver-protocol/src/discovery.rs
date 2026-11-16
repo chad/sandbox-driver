@@ -27,7 +27,7 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use sandbox_driver::{Error, ProviderKind, ResourceKind, Result};
+use sandbox_driver::legacy::{Error, ProviderKind, ResourceKind, Result};
 use sha2::{Digest, Sha256};
 use tokio::fs as tokio_fs;
 use tokio::io::AsyncReadExt;

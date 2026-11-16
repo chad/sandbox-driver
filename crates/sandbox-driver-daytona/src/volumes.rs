@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 use daytona_api_client::models::VolumeDto;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     Action, Error, EventContext, EventEmitter, EventSubject, ProviderKind, ResourceKind, Result,
     VolumeId, VolumeProvider, VolumeSpec, VolumeState, VolumeStatus,
 };

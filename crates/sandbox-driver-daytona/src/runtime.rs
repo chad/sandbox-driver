@@ -1,4 +1,4 @@
-//! Daytona on the shared sandbox contract ([`sandbox_driver::contract`]).
+//! Daytona on the shared sandbox contract ([`sandbox_driver`]).
 //!
 //! [`DaytonaFactory`] is the built-in registration: an embedding program
 //! adds it with `Registry::builtin("daytona", Arc::new(DaytonaFactory))`,
@@ -15,10 +15,9 @@ mod spec;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sandbox_driver::ProviderKind;
-use sandbox_driver::contract::{
-    Activation, Error, JsonSchema, MutationOutcome, PluginLocation, ProviderFactory,
-    ProviderRuntime, ProviderSchemas,
+use sandbox_driver::{
+    Activation, Error, JsonSchema, MutationOutcome, PluginLocation, Provider, ProviderFactory,
+    ProviderKind, ProviderSchemas,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -128,7 +127,7 @@ impl ProviderFactory for DaytonaFactory {
         Ok(Self::schemas())
     }
 
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
         Ok(Arc::new(DaytonaRuntime::activate(activation).await?))
     }
 }

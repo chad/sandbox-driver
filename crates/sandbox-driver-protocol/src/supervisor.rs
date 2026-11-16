@@ -6,7 +6,7 @@ use std::time::Duration;
 use std::{env, mem};
 
 use async_trait::async_trait;
-use sandbox_driver::{
+use sandbox_driver::legacy::{
     AuthError, Capabilities, Capability, Error, EventContext, HealthStatus, LogSink, ProviderError,
     ProviderHealth, ProviderKind, Result, Sandbox, SandboxFilter, SandboxId, SandboxProvider,
     SandboxSpec, SandboxStatus, SnapshotFilter, SnapshotId, SnapshotProvider, SnapshotSpec,
