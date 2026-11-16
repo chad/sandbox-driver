@@ -1,5 +1,5 @@
 //! Host side of protocol version 3: a configured plugin child adapted to
-//! `sandbox_driver::ProviderRuntime`.
+//! `sandbox_driver::Provider`.
 //!
 //! Each launch is a *generation*. Handles keep the generation that issued
 //! them and fail with `Stale` once it ends. A runtime call after a crash
@@ -21,7 +21,7 @@ use sandbox_driver::legacy::{SandboxId, StopLevel, TransportError};
 use sandbox_driver::{
     ByteStream, Descriptor, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
     FileEntry, FileRange, Files, Health, LabelFilter, MutationOutcome, OutputStream, Ports,
-    ProviderName, ProviderRuntime, ProviderSchemas, Sandbox, SandboxRef, SandboxSummary, Status,
+    Provider, ProviderName, ProviderSchemas, Sandbox, SandboxRef, SandboxSummary, Status,
     TerminalSize, WorkloadAdmission, legacy,
 };
 use serde::Serialize;
@@ -349,7 +349,7 @@ impl PluginRuntime {
 }
 
 #[async_trait]
-impl ProviderRuntime for PluginRuntime {
+impl Provider for PluginRuntime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         Ok(self.generation().await?.descriptor.clone())
     }

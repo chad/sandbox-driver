@@ -10,8 +10,8 @@ use std::sync::Arc;
 
 use sandbox_driver::{
     Activation, ByteStream, Error, ExecControls, MutationOutcome, OutputSink, OutputStream,
-    ProviderEntry, ProviderFactory, ProviderRuntime, ProviderSchemas, Sandbox, SandboxId,
-    SecretValues, StopLevel, TerminalSize, WorkloadAdmission, legacy,
+    Provider, ProviderEntry, ProviderFactory, ProviderSchemas, Sandbox, SandboxId, SecretValues,
+    StopLevel, TerminalSize, WorkloadAdmission, legacy,
 };
 use serde_json::Value;
 use tokio::io::AsyncReadExt;
@@ -42,7 +42,7 @@ struct ExecHandle {
 pub(crate) struct V3State {
     schemas:   ProviderSchemas,
     factory:   Arc<dyn ProviderFactory>,
-    runtime:   OnceCell<Arc<dyn ProviderRuntime>>,
+    runtime:   OnceCell<Arc<dyn Provider>>,
     sandboxes: Registry<Arc<dyn Sandbox>>,
     execs:     Registry<ExecHandle>,
     closing:   CancellationToken,
@@ -60,7 +60,7 @@ impl V3State {
         }
     }
 
-    fn runtime(&self) -> Result<&Arc<dyn ProviderRuntime>, Error> {
+    fn runtime(&self) -> Result<&Arc<dyn Provider>, Error> {
         self.runtime.get().ok_or_else(|| Error::Unavailable {
             message: "the plugin has not been initialized".into(),
             outcome: MutationOutcome::NotStarted,

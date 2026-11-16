@@ -15,8 +15,8 @@ use sandbox_driver::{
     Environment, EnvironmentName, Error, ExecControls, ExecOutcome, ExecSpec, Expose, Exposure,
     FileEntry, FileKind, FileRange, Files, Health, Isolation, JsonSchema, LabelFilter, Locality,
     MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode, OutputLoss, OutputStream,
-    PluginLocation, PortSupport, Ports, ProviderEntry, ProviderFactory, ProviderKind, ProviderName,
-    ProviderRuntime, ProviderSchemas, Registry, Sandbox, SandboxId, SandboxRef, SandboxSpec,
+    PluginLocation, PortSupport, Ports, Provider, ProviderEntry, ProviderFactory, ProviderKind,
+    ProviderName, ProviderSchemas, Registry, Sandbox, SandboxId, SandboxRef, SandboxSpec,
     SandboxState, SandboxSummary, Sandboxes, SecretResolver, Source, SourceKind,
     StaticEnvironments, Status, Termination, WorkloadAdmission,
 };
@@ -206,7 +206,7 @@ impl ProviderFactory for FakeProvider {
         self.record("discover", None).await;
         Ok(Self::schemas())
     }
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
         self.record("activate", None).await;
         Ok(Arc::new(Runtime {
             fake:   self.clone(),
@@ -239,7 +239,7 @@ impl Runtime {
     }
 }
 #[async_trait]
-impl ProviderRuntime for Runtime {
+impl Provider for Runtime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         ensure_open(&self.closed)?;
         self.fake.record("describe", None).await;

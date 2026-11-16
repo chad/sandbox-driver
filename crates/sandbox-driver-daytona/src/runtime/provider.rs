@@ -14,9 +14,8 @@ use sandbox_driver::legacy::{
 use sandbox_driver::{
     AccessScope, Activation, CapabilitySet, ContainerField, Descriptor, Durability, Error, Health,
     LabelFilter, Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode,
-    PortSupport, ProviderName, ProviderRuntime, ProviderSchemas, RemainingResource,
-    ResourceCapability, Sandbox, SandboxRef, SandboxSummary, SourceKind, TimerCapability,
-    WorkloadAdmission, legacy,
+    PortSupport, Provider, ProviderName, ProviderSchemas, RemainingResource, ResourceCapability,
+    Sandbox, SandboxRef, SandboxSummary, SourceKind, TimerCapability, WorkloadAdmission, legacy,
 };
 use serde::Deserialize;
 use tokio::time;
@@ -275,7 +274,7 @@ fn descriptor(schemas: ProviderSchemas, namespace: NamespaceId) -> Descriptor {
 }
 
 #[async_trait]
-impl ProviderRuntime for DaytonaRuntime {
+impl Provider for DaytonaRuntime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         self.ensure_open()?;
         Ok(self.descriptor.clone())

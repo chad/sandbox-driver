@@ -10,7 +10,7 @@ use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
 
 use super::Error;
-use super::runtime::ByteStream;
+use super::provider::ByteStream;
 use super::workload::{validate_argv, validate_env, validate_name};
 use crate::redact::EnvKeys;
 

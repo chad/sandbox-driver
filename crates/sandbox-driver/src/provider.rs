@@ -97,7 +97,7 @@ impl fmt::Debug for Activation {
 #[async_trait]
 pub trait ProviderFactory: Send + Sync {
     async fn discover(&self, location: &PluginLocation) -> Result<ProviderSchemas, Error>;
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error>;
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error>;
 }
 
 /// Fully resolved workload inputs. Secret values are separate from the saved
@@ -115,7 +115,7 @@ pub struct WorkloadAdmission {
 /// Stop/destroy fence every admitted workload/service/one-shot or return an
 /// honest failure. No implementation may infer absence from failed contact.
 #[async_trait]
-pub trait ProviderRuntime: Send + Sync {
+pub trait Provider: Send + Sync {
     async fn describe(&self) -> Result<Descriptor, Error>;
     async fn health(&self) -> Result<Health, Error>;
     async fn create(&self, admission: WorkloadAdmission) -> Result<Box<dyn Sandbox>, Error>;

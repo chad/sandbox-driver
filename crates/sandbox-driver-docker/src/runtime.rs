@@ -36,8 +36,8 @@ use sandbox_driver::{
     Durability, EndpointCapability, Endpoints, Error as ContractError, ExecControls, ExecOutcome,
     ExecSpec, Expose, Exposure, FileEntry, FileRange, Files, Health, JsonSchema, LabelFilter,
     Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode, NetworkPolicy,
-    OneShotImage, OneShotSpec, OutputStream, PluginLocation, PortSupport, Ports, ProviderFactory,
-    ProviderName, ProviderRuntime, ProviderSchemas, ResourceCapability, Resources, Sandbox,
+    OneShotImage, OneShotSpec, OutputStream, PluginLocation, PortSupport, Ports, Provider,
+    ProviderFactory, ProviderName, ProviderSchemas, ResourceCapability, Resources, Sandbox,
     SandboxRef, SandboxState, SandboxSummary, ServiceAddress, SourceKind, Status, Termination,
     WorkloadAdmission,
 };
@@ -105,10 +105,7 @@ impl ProviderFactory for DockerFactory {
         Ok(Self::schemas())
     }
 
-    async fn activate(
-        &self,
-        activation: Activation,
-    ) -> Result<Arc<dyn ProviderRuntime>, ContractError> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, ContractError> {
         let invalid = |path: &str, message: String| ContractError::InvalidConfig {
             entry: activation.name.clone(),
             path: path.to_owned(),
@@ -202,7 +199,7 @@ impl DockerRuntime {
 }
 
 #[async_trait]
-impl ProviderRuntime for DockerRuntime {
+impl Provider for DockerRuntime {
     async fn describe(&self) -> Result<Descriptor, ContractError> {
         Ok(Descriptor {
             schemas:      DockerFactory::schemas(),

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use sandbox_driver::{
-    Activation, Error, PluginLocation, ProviderFactory, ProviderRuntime, ProviderSchemas,
+    Activation, Error, PluginLocation, Provider, ProviderFactory, ProviderSchemas,
 };
 
 use crate::TransportLimits;
@@ -36,7 +36,7 @@ impl ProviderFactory for PluginLoader {
         Ok(self.discovery.discover(location).await?.schemas().clone())
     }
 
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
         let Activation {
             name,
             entry,

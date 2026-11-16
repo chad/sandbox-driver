@@ -4,8 +4,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use sandbox_driver::{
-    Activation, Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, ProviderFactory,
-    ProviderName, ProviderRuntime, Sandbox, SandboxSpec, SandboxState, SecretValues, Source,
+    Activation, Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, Provider,
+    ProviderFactory, ProviderName, Sandbox, SandboxSpec, SandboxState, SecretValues, Source,
     WorkloadAdmission,
 };
 use sandbox_driver_testing::{FakeExec, FakeProvider};
@@ -92,7 +92,7 @@ async fn fake_files_resolve_against_workspace_and_list_implicit_parents() {
 
 /// A sandbox whose `long` command emits one output chunk and then waits for
 /// stop, cancellation or shutdown.
-async fn long_running() -> (FakeProvider, Arc<dyn ProviderRuntime>, Box<dyn Sandbox>) {
+async fn long_running() -> (FakeProvider, Arc<dyn Provider>, Box<dyn Sandbox>) {
     let fake = FakeProvider::new();
     fake.script(["long"], FakeExec {
         stdout: vec![1],
@@ -118,7 +118,7 @@ fn signalling_sink() -> (OutputSink, mpsc::Receiver<()>) {
     (sink, receiver)
 }
 
-async fn activate(fake: &FakeProvider) -> Arc<dyn ProviderRuntime> {
+async fn activate(fake: &FakeProvider) -> Arc<dyn Provider> {
     fake.activate(Activation {
         name:        ProviderName::try_new("fake").expect("name"),
         entry:       serde_json::from_value(serde_json::json!({"plugin": "fake"})).expect("entry"),
@@ -130,7 +130,7 @@ async fn activate(fake: &FakeProvider) -> Arc<dyn ProviderRuntime> {
     .expect("activate")
 }
 
-async fn create(runtime: &Arc<dyn ProviderRuntime>) -> Box<dyn Sandbox> {
+async fn create(runtime: &Arc<dyn Provider>) -> Box<dyn Sandbox> {
     runtime
         .create(WorkloadAdmission {
             spec:        SandboxSpec::new(Source::Image("fake:workload".into())),

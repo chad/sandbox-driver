@@ -22,10 +22,9 @@ use sandbox_driver::{
     AccessScope, Activation, ByteStream, CapabilitySet, Descriptor, Durability, Error,
     ExecControls, ExecOutcome, ExecSpec, Expose, Exposure, FileEntry, FileRange, Files, Health,
     LabelFilter, Locality, MutationOutcome, Namespace, NamespaceId, NamespaceScope, NetworkMode,
-    OutputStream as ContractStream, PluginLocation, PortSupport, Ports, ProviderFactory,
-    ProviderName, ProviderRuntime, ProviderSchemas, RemainingResource, Resources, Sandbox,
-    SandboxRef, SandboxState, SandboxSummary, SourceKind, Status, Termination, WorkloadAdmission,
-    legacy,
+    OutputStream as ContractStream, PluginLocation, PortSupport, Ports, Provider, ProviderFactory,
+    ProviderName, ProviderSchemas, RemainingResource, Resources, Sandbox, SandboxRef, SandboxState,
+    SandboxSummary, SourceKind, Status, Termination, WorkloadAdmission, legacy,
 };
 use serde_json::json;
 use tokio::fs as tokio_fs;
@@ -72,7 +71,7 @@ impl ProviderFactory for HostFactory {
         Ok(schemas())
     }
 
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
         Ok(Arc::new(HostRuntime::start(activation.name).await?))
     }
 }
@@ -212,7 +211,7 @@ impl HostRuntime {
 }
 
 #[async_trait]
-impl ProviderRuntime for HostRuntime {
+impl Provider for HostRuntime {
     async fn describe(&self) -> Result<Descriptor, Error> {
         Ok(self.descriptor.clone())
     }

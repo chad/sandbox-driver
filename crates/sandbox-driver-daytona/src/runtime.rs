@@ -16,8 +16,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use sandbox_driver::{
-    Activation, Error, JsonSchema, MutationOutcome, PluginLocation, ProviderFactory, ProviderKind,
-    ProviderRuntime, ProviderSchemas,
+    Activation, Error, JsonSchema, MutationOutcome, PluginLocation, Provider, ProviderFactory,
+    ProviderKind, ProviderSchemas,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -127,7 +127,7 @@ impl ProviderFactory for DaytonaFactory {
         Ok(Self::schemas())
     }
 
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
         Ok(Arc::new(DaytonaRuntime::activate(activation).await?))
     }
 }

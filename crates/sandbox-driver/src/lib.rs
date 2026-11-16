@@ -19,8 +19,8 @@ mod identity;
     reason = "temporary module: its files keep the paths they had at the crate root"
 )]
 pub mod legacy;
+mod provider;
 mod redact;
-mod runtime;
 mod schema;
 mod status;
 mod units;
@@ -47,10 +47,10 @@ pub use id::{
     Sha256Digest, SnapshotId,
 };
 pub use identity::SandboxRef;
-pub use runtime::{
+pub use provider::{
     Activation, ByteStream, Containers, Endpoints, Expose, Exposure, FileEntry, FileKind,
     FileRange, Files, Health, LabelFilter, OneShotImage, OneShotSpec, PluginLocation, Ports,
-    ProviderFactory, ProviderRuntime, Sandbox, SandboxSummary, SecretResolver, SecretValues,
+    Provider, ProviderFactory, Sandbox, SandboxSummary, SecretResolver, SecretValues,
     SshAccessInfo, VncConnection, WorkloadAdmission,
 };
 pub use status::{SandboxState, ServiceAddress, Status};

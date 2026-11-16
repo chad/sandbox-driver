@@ -17,8 +17,8 @@ use super::schema::Schemas;
 use super::workload::{valid_env_key, validate_env, validate_name};
 use super::{
     Activation, Descriptor, Environment, EnvironmentName, EnvironmentSource, Error, Health,
-    LabelFilter, MutationOutcome, NetworkPolicy, PluginLocation, ProviderEntry, ProviderFactory,
-    ProviderName, ProviderRuntime, Sandbox, SandboxRef, SandboxSpec, SandboxSummary,
+    LabelFilter, MutationOutcome, NetworkPolicy, PluginLocation, Provider, ProviderEntry,
+    ProviderFactory, ProviderName, Sandbox, SandboxRef, SandboxSpec, SandboxSummary,
     SecretResolver, SecretValues, Source, Timers, WorkloadAdmission, parse_size_mib,
 };
 use crate::ProviderKind;
@@ -123,7 +123,7 @@ impl EnvironmentSource for StaticEnvironments {
 }
 
 struct Active {
-    runtime:    Arc<dyn ProviderRuntime>,
+    runtime:    Arc<dyn Provider>,
     schemas:    Schemas,
     descriptor: Descriptor,
 }

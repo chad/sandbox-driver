@@ -7,9 +7,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use sandbox_driver::{
-    Activation, Descriptor, Error, Health, LabelFilter, PluginLocation, ProviderFactory,
-    ProviderKind, ProviderRuntime, ProviderSchemas, Sandbox, SandboxId, SandboxSummary,
-    WorkloadAdmission, legacy,
+    Activation, Descriptor, Error, Health, LabelFilter, PluginLocation, Provider, ProviderFactory,
+    ProviderKind, ProviderSchemas, Sandbox, SandboxId, SandboxSummary, WorkloadAdmission, legacy,
 };
 use sandbox_driver_protocol::{Plugin, run_plugin};
 
@@ -42,21 +41,21 @@ impl ProviderFactory for Renamed {
         Ok(self.schemas.clone())
     }
 
-    async fn activate(&self, activation: Activation) -> Result<Arc<dyn ProviderRuntime>, Error> {
-        Ok(Arc::new(RenamedRuntime {
+    async fn activate(&self, activation: Activation) -> Result<Arc<dyn Provider>, Error> {
+        Ok(Arc::new(RenamedProvider {
             schemas: self.schemas.clone(),
             runtime: self.factory.activate(activation).await?,
         }))
     }
 }
 
-struct RenamedRuntime {
+struct RenamedProvider {
     schemas: ProviderSchemas,
-    runtime: Arc<dyn ProviderRuntime>,
+    runtime: Arc<dyn Provider>,
 }
 
 #[async_trait]
-impl ProviderRuntime for RenamedRuntime {
+impl Provider for RenamedProvider {
     async fn describe(&self) -> Result<Descriptor, Error> {
         Ok(Descriptor {
             schemas: self.schemas.clone(),
