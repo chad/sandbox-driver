@@ -1,6 +1,6 @@
 # sandbox-driver plugin protocol, version 2
 
-The additive [shared contract](shared-contract.md) defines next-API data and
+The additive [shared contract](design.md) defines next-API data and
 schema bootstrap requirements. It does not change this version's handshake,
 error encoding, operation DTOs, or transport. New adapters require explicit
 version negotiation; new workload specs must not be sent as v2 specs.
@@ -1100,7 +1100,7 @@ deferred. They are masked or absent per §5.
 
 ## 15. Shared-contract metadata probe
 
-The credential-free discovery step in [the shared contract](shared-contract.md)
+The credential-free discovery step in [the shared contract](design.md)
 does not change the v2 handshake or make a v2 provider implement the new
 contract. Existing `launch_plugin`, `PluginProvider`, and `serve_stdio` remain
 the v2 entry points.
@@ -1117,11 +1117,11 @@ duration and output and, on Unix, kills its process group when the probe ends,
 so it **must not** leave work behind in descendants.
 
 The host-side budgets, cache and errors are described under
-[plugin metadata discovery](shared-contract.md#plugin-metadata-discovery).
+[plugin metadata discovery](design.md#plugin-metadata-discovery).
 
 ## 16. Protocol version 3: the shared contract over a process boundary
 
-Version 3 carries [the shared contract](shared-contract.md) between a host and
+Version 3 carries [the shared contract](design.md) between a host and
 a configured third-party plugin. The built-in providers (Host, Docker and
 Daytona) are never served over it: their kinds are reserved, and a plugin uses
 another kind. The framing, envelope, data channels and transport budgets of
