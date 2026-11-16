@@ -15,8 +15,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::legacy::capabilities::Capability;
 use crate::legacy::error::{Error, Result};
-use crate::legacy::sanitize::OutputSanitization;
 use crate::redact::EnvKeys;
+use crate::sanitize::OutputSanitization;
 pub use crate::{OutputLoss, StopLevel, stop_signal};
 
 /// The interpreter [`ExecSpec::bash`] names, resolved through `PATH`

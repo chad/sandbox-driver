@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::legacy::error::Result;
 use crate::legacy::exec::{ExecControls, ExecStreamingResult};
-use crate::legacy::sanitize::OutputSanitization;
 use crate::redact::EnvKeys;
+use crate::sanitize::OutputSanitization;
 
 /// Ephemeral containers run beside a sandbox, in its world.
 ///
