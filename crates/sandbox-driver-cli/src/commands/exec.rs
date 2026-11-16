@@ -7,7 +7,7 @@ use sandbox_driver::{
     Durability, Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, OutputStream, Sandbox,
     Sandboxes, Termination, parse_duration_ms,
 };
-use tokio::io::{AsyncWrite, AsyncWriteExt as _, stderr, stdin, stdout};
+use tokio::io::{self, AsyncWrite, AsyncWriteExt as _, stderr, stdout};
 use tokio::process::Command as TokioCommand;
 use tokio::signal::ctrl_c;
 use tokio_util::sync::CancellationToken;
@@ -27,6 +27,9 @@ pub(super) async fn run(catalog: &Sandboxes, args: &RunArgs) -> Result<u8> {
     if args.create.spec.as_deref() == Some("-".as_ref()) && args.exec.stdin {
         bail!("--spec - and --stdin cannot both read stdin");
     }
+    // Every option is checked before anything is created: a typo must not
+    // cost a sandbox.
+    let spec = exec_spec(&args.exec, &args.command)?;
     let builder = catalog.builder(&args.create.environment).await?;
     let builder = apply(builder, &args.create).await?;
     if args.keep {
@@ -43,7 +46,7 @@ pub(super) async fn run(catalog: &Sandboxes, args: &RunArgs) -> Result<u8> {
         )
     })?;
     let reference = sandbox.reference();
-    let outcome = execute(sandbox.as_ref(), &args.exec, &args.command).await;
+    let outcome = execute(sandbox.as_ref(), spec, args.exec.stdin).await;
 
     if args.keep {
         write_stderr(format!("kept sandbox {}\n", display_ref(&reference)).as_bytes()).await?;
@@ -63,13 +66,8 @@ pub(super) async fn run(catalog: &Sandboxes, args: &RunArgs) -> Result<u8> {
     }
 }
 
-/// Runs `command`, streaming its output to this process's stdout and
-/// stderr, and returns the exit code the CLI should exit with.
-pub(super) async fn execute(
-    sandbox: &dyn Sandbox,
-    options: &ExecOptions,
-    command: &[String],
-) -> Result<u8> {
+/// The command and its exec options as an `ExecSpec`.
+pub(super) fn exec_spec(options: &ExecOptions, command: &[String]) -> Result<ExecSpec> {
     let mut spec = ExecSpec::argv(command);
     spec.env = parse_assignments(&options.exec_env, "exec-env")?;
     spec.working_directory.clone_from(&options.workdir);
@@ -80,12 +78,18 @@ pub(super) async fn execute(
                 .context("--timeout needs a duration with a unit, such as 30s or 5m")?,
         );
     }
+    Ok(spec)
+}
 
+/// Runs `spec`, streaming its output to this process's stdout and stderr,
+/// and local stdin to it when `stdin` is set. Returns the exit code the CLI
+/// should exit with.
+pub(super) async fn execute(sandbox: &dyn Sandbox, spec: ExecSpec, stdin: bool) -> Result<u8> {
     // Ctrl-C is the caller's own ladder: the first requests TERM, a second
     // KILL. There is no automatic escalation.
     let (term, kill) = (CancellationToken::new(), CancellationToken::new());
     let controls = ExecControls {
-        stdin:  options.stdin.then(|| Box::pin(stdin()) as _),
+        stdin:  stdin.then(|| Box::pin(io::stdin()) as _),
         sink:   Some(output_sink()),
         term:   Some(term.clone()),
         kill:   Some(kill.clone()),

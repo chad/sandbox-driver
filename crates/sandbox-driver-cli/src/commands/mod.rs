@@ -68,9 +68,10 @@ pub(crate) async fn execute(
         }
         Command::Exec(args) => {
             require_raw_output(output, "exec")?;
+            let spec = exec::exec_spec(&args.options, &args.command)?;
             let reference = resolve_ref(catalog, &args.sandbox).await?;
             let sandbox = attach(catalog, &reference).await?;
-            exec::execute(sandbox.as_ref(), &args.options, &args.command).await
+            exec::execute(sandbox.as_ref(), spec, args.options.stdin).await
         }
         Command::Shell(args) => {
             require_raw_output(output, "shell")?;
