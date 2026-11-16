@@ -1,17 +1,21 @@
 # sandbox-driver
 
-> **Status: target API, provider integration in progress.** This document
-> specifies the API that `sandbox_driver::contract` is building toward and
-> changes in the same PR as that module. The
-> [README](https://github.com/lithoscomputer/sandbox-driver/blob/main/README.md)
-> introduces it with runnable in-memory examples. Current real-provider usage
-> remains in [the existing API design](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md)
-> and [CLI guide](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/cli.md).
+> **Status:** This is the specification of the `Sandboxes` API, which lives in
+> `sandbox_driver::contract` until it moves to the crate root, and it changes in
+> the same PR as that module. Host, Docker, and Daytona implement it as
+> built-ins, and protocol version 3 loads third-party plugins. The
+> [CLI](#cli) section is not implemented yet: until the CLI is ported, it runs
+> every provider as a protocol version 2 plugin, as the
+> [CLI guide](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/cli.md) describes.
+> The older crate-root provider API ([design](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/design.md)),
+> protocol version 2, and the provider executables are still in the tree but are
+> being removed; if you need them, pin tag
+> [`v2`](https://github.com/lithoscomputer/sandbox-driver/tree/v2).
 > The [shared contract](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/shared-contract.md)
-> is the implementation handoff. Real-provider adoption still requires the
-> shared `Sandboxes` API, plugin loader, and Docker, Daytona, and Host providers
-> to pass conformance together. This document remains the detailed specification;
-> the README remains the short introduction.
+> is the implementation handoff. The
+> [README](https://github.com/lithoscomputer/sandbox-driver/blob/main/README.md)
+> introduces the API with runnable in-memory examples; this document is the
+> detailed specification.
 
 One interface to any sandbox. Clients name an environment; providers own the sandboxes; the library owns everything in between.
 
