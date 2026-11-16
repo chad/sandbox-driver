@@ -1,7 +1,7 @@
 use std::fmt::Write as _;
 
 use anyhow::{Context as _, Result};
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Descriptor, Environment, EnvironmentName, Exposure, FileEntry, Found, Health, ProviderEntry,
     ProviderName, SandboxRef, Status,
 };

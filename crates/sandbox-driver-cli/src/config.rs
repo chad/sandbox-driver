@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use anyhow::{Context as _, Result};
 use async_trait::async_trait;
-use sandbox_driver::contract::{
+use sandbox_driver::{
     CatalogOptions, Environment, EnvironmentName, Error, ProviderEntry, ProviderFactory,
     ProviderName, Registry, SandboxSpec, Sandboxes, SecretResolver, Source, StaticEnvironments,
 };

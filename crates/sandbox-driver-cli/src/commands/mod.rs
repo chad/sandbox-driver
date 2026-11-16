@@ -3,9 +3,8 @@ mod files;
 mod spec;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::SandboxId;
-use sandbox_driver::contract::{
-    Expose, LabelFilter, ProviderEntry, ProviderName, Sandbox, SandboxRef, Sandboxes,
+use sandbox_driver::{
+    Expose, LabelFilter, ProviderEntry, ProviderName, Sandbox, SandboxId, SandboxRef, Sandboxes,
     parse_duration_ms,
 };
 use tokio::signal::ctrl_c;

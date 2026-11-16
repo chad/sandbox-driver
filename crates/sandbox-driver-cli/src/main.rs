@@ -10,7 +10,7 @@ use std::process::ExitCode;
 use anyhow::{Context as _, Result};
 use clap::Parser as _;
 use cli::Cli;
-use sandbox_driver::contract::Error;
+use sandbox_driver::Error;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt;
 use tracing_subscriber::prelude::*;

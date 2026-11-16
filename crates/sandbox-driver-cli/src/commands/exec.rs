@@ -3,7 +3,7 @@ use std::process::Stdio;
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::contract::{
+use sandbox_driver::{
     Durability, Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, OutputStream, Sandbox,
     Sandboxes, Termination, parse_duration_ms,
 };

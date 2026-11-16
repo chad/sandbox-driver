@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::contract::{SandboxRef, Sandboxes};
+use sandbox_driver::{SandboxRef, Sandboxes};
 use tokio::fs::File;
 use tokio::io::{AsyncWriteExt as _, copy, stdin, stdout};
 

@@ -3,8 +3,7 @@ use std::num::NonZeroU64;
 use std::path::Path;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::SnapshotId;
-use sandbox_driver::contract::{SandboxBuilder, SandboxSpec, Source, parse_size_mib};
+use sandbox_driver::{SandboxBuilder, SandboxSpec, SnapshotId, Source, parse_size_mib};
 use serde_json::Value;
 use tokio::fs::{read, read_to_string};
 use tokio::io::{AsyncReadExt as _, stdin};
