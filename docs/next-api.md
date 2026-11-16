@@ -207,11 +207,11 @@ pub async fn run_captured_with(
 /// `run_captured` of `ExecSpec::shell(script)`.
 pub async fn run_shell(sandbox: &dyn Sandbox, script: &str) -> Result<Captured, Error>;
 
-pub struct Captured { pub outcome: ExecOutcome, pub stdout: CapturedOutput, pub stderr: CapturedOutput }
+pub struct Captured { pub outcome: ExecOutcome, pub stdout: CapturedOutput, pub stderr: CapturedOutput, pub duration: Duration }
 pub struct CapturedOutput { pub bytes: Vec<u8>, pub omitted_bytes: u64 }
 ```
 
-A command that exits nonzero is a `Captured`, not an error; `success()` is true only for an exit with code zero. Output beyond the limit is still read, so the command never blocks, and is counted in `omitted_bytes`: the first half of the limit is kept from the start of the stream and the rest from its end. `is_complete()` is false when anything was omitted or the provider reported output loss, so check it before parsing output.
+A command that exits nonzero is a `Captured`, not an error; `success()` is true only for an exit with code zero. Output beyond the limit is still read, so the command never blocks, and is counted in `omitted_bytes`: the first half of the limit is kept from the start of the stream and the rest from its end. `is_complete()` is false when anything was omitted or the provider reported output loss, so check it before parsing output. `duration` is how long the caller waited for the command, measured by the library around the exec.
 
 `ExecSpec::shell(script)` is the one place a shell is implied. It runs the script under Bash when the workload has `bash` on its `PATH` and under POSIX `sh` otherwise, as a non-login shell with `BASH_ENV` unset. The workload must provide `sh`.
 

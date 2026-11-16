@@ -3,7 +3,7 @@
 use std::os::unix::fs::symlink;
 use std::process::{Command, Output};
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{env, fs, process};
 
 use sandbox_driver::{
@@ -11,6 +11,7 @@ use sandbox_driver::{
     OutputStream, Sandbox, Sandboxes, Termination, run_captured, run_captured_with, run_shell,
 };
 use sandbox_driver_testing::{FakeExec, FakeProvider};
+use tokio::time;
 use tokio_util::sync::CancellationToken;
 
 /// A sandbox on a fake that answers `argv` with `response`.
@@ -124,6 +125,35 @@ async fn the_callers_sink_sees_every_chunk_even_when_nothing_is_kept() {
     assert!(captured.stdout.bytes.is_empty());
     assert_eq!(captured.stdout.omitted_bytes, 3);
     assert_eq!(captured.stderr.omitted_bytes, 3);
+}
+
+#[tokio::test(start_paused = true)]
+async fn the_duration_covers_the_whole_exec_including_the_callers_sink() {
+    let (_catalog, sandbox) = scripted(build(), FakeExec {
+        stdout: b"out".to_vec(),
+        stderr: b"err".to_vec(),
+        ..FakeExec::default()
+    })
+    .await;
+    // The clock is paused, so only these sleeps advance it: one per chunk.
+    let sink: OutputSink = Arc::new(|_, _| {
+        Box::pin(async {
+            time::sleep(Duration::from_secs(2)).await;
+            Ok(())
+        })
+    });
+    let captured = run_captured_with(
+        sandbox.as_ref(),
+        ExecSpec::argv(build()),
+        ExecControls {
+            sink: Some(sink),
+            ..ExecControls::default()
+        },
+        DEFAULT_CAPTURE_BYTES,
+    )
+    .await
+    .expect("run");
+    assert_eq!(captured.duration, Duration::from_secs(4));
 }
 
 #[tokio::test]

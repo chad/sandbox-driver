@@ -4,7 +4,10 @@
 
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::time::Duration;
 use std::{fmt, future, mem};
+
+use tokio::time::Instant;
 
 use super::{
     Error, ExecControls, ExecOutcome, ExecSpec, OutputSink, OutputStream, Sandbox, Termination,
@@ -44,11 +47,16 @@ impl fmt::Debug for CapturedOutput {
 /// A finished command and the output it wrote.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Captured {
-    pub outcome: ExecOutcome,
+    pub outcome:  ExecOutcome,
     /// Also holds the single terminal stream of a command run with
     /// [`ExecSpec::tty`].
-    pub stdout:  CapturedOutput,
-    pub stderr:  CapturedOutput,
+    pub stdout:   CapturedOutput,
+    pub stderr:   CapturedOutput,
+    /// How long the caller waited for the command: from the request to the
+    /// provider until its outcome came back, measured here and not by the
+    /// provider. It includes the provider's own setup and the time the
+    /// caller's sink took.
+    pub duration: Duration,
 }
 
 impl Captured {
@@ -122,7 +130,9 @@ pub async fn run_captured_with(
         })
     };
     controls.sink = Some(sink);
+    let started = Instant::now();
     let outcome = sandbox.exec(spec, controls).await?;
+    let duration = started.elapsed();
     // A provider may still hold the sink, so the buffers are taken, not
     // unwrapped.
     let mut streams = lock(&streams);
@@ -130,6 +140,7 @@ pub async fn run_captured_with(
         outcome,
         stdout: streams.stdout.take(),
         stderr: streams.stderr.take(),
+        duration,
     })
 }
 
