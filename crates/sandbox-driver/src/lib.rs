@@ -28,6 +28,7 @@ pub mod legacy;
 mod provider;
 mod redact;
 mod schema;
+mod search;
 mod status;
 mod units;
 mod wire_time;
@@ -63,6 +64,9 @@ pub use provider::{
     FileRange, Files, Health, LabelFilter, OneShotImage, OneShotSpec, PluginLocation, Ports,
     Provider, ProviderFactory, Sandbox, SandboxSummary, SecretResolver, SecretValues,
     SshAccessInfo, VncConnection, WorkloadAdmission,
+};
+pub use search::{
+    GrepMatch, GrepOptions, WalkOptions, WalkedFile, glob_files, grep_files, walk_files,
 };
 pub use status::{SandboxState, ServiceAddress, Status};
 pub use units::{ParseUnitError, parse_duration_ms, parse_size_mib};

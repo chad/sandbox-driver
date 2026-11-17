@@ -128,10 +128,15 @@ async fn run(sandbox: &dyn Sandbox, script: String) -> Result<Captured, Error> {
     run_captured(sandbox, spec).await
 }
 
-/// `value` as one single-quoted shell word.
-fn quoted(field: &str, value: &str) -> Result<String, Error> {
+/// The non-empty, NUL-free `value` as one single-quoted shell word.
+pub(super) fn quoted(field: &str, value: &str) -> Result<String, Error> {
     validate_name(field, value)?;
-    Ok(format!("'{}'", value.replace('\'', "'\\''")))
+    Ok(shell_word(value))
+}
+
+/// `value` as one single-quoted shell word.
+pub(super) fn shell_word(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 /// Shell that prints [`MISSING`] and stops when nothing is at `$variable`,
@@ -143,7 +148,7 @@ fn if_missing(variable: &str) -> String {
     )
 }
 
-fn succeeded(context: &str, captured: &Captured) -> Result<(), CommandError> {
+pub(super) fn succeeded(context: &str, captured: &Captured) -> Result<(), CommandError> {
     if captured.success() {
         Ok(())
     } else {
@@ -162,7 +167,7 @@ fn answer<'a>(context: &str, captured: &'a Captured) -> Result<&'a str, CommandE
     Ok(text.strip_suffix('\n').unwrap_or(text))
 }
 
-fn unreadable(context: &str, captured: &Captured) -> CommandError {
+pub(super) fn unreadable(context: &str, captured: &Captured) -> CommandError {
     CommandError::UnexpectedOutput(Box::new(CommandFailure::new(context, captured)))
 }
 
