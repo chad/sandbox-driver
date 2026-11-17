@@ -13,7 +13,7 @@ use super::{
     Error, ExecControls, ExecOutcome, ExecSpec, OutputSink, OutputStream, Sandbox, Termination,
 };
 
-/// How much of each stream [`run_captured`] and [`run_shell`] keep.
+/// How much of each stream [`run_captured`] and [`run_bash`] keep.
 pub const DEFAULT_CAPTURE_BYTES: usize = 16 * 1024 * 1024;
 
 /// One stream of a captured command.
@@ -144,14 +144,14 @@ pub async fn run_captured_with(
     })
 }
 
-/// Runs `script` through [`ExecSpec::shell`] and captures it as
+/// Runs `script` through [`ExecSpec::bash`] and captures it as
 /// [`run_captured`] does.
 ///
 /// # Errors
 ///
 /// Whatever [`Sandbox::exec`] returns. The script may have had effects.
-pub async fn run_shell(sandbox: &dyn Sandbox, script: &str) -> Result<Captured, Error> {
-    run_captured(sandbox, ExecSpec::shell(script)).await
+pub async fn run_bash(sandbox: &dyn Sandbox, script: &str) -> Result<Captured, Error> {
+    run_captured(sandbox, ExecSpec::bash(script)).await
 }
 
 /// The buffers hold plain bytes and counts, so a panic elsewhere while the
