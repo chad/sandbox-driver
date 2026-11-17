@@ -1,9 +1,10 @@
+use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use anyhow::{Context as _, Result};
 use sandbox_driver::{
     Descriptor, Environment, EnvironmentName, Exposure, FileEntry, Found, Health, ProviderEntry,
-    ProviderName, SandboxRef, Status,
+    ProviderName, SandboxRef, Source, Status,
 };
 use serde::Serialize;
 use serde_json::Value;
@@ -24,7 +25,7 @@ struct ProviderRow<'a> {
 }
 
 pub(crate) async fn write_providers(
-    entries: &[(ProviderName, ProviderEntry)],
+    entries: &BTreeMap<ProviderName, ProviderEntry>,
     format: OutputFormat,
 ) -> Result<()> {
     let rows: Vec<_> = entries
@@ -70,13 +71,11 @@ pub(crate) async fn write_environments(
         OutputFormat::Table => {
             let mut rendered = String::from("NAME\tPROVIDER\tSOURCE\n");
             for (name, environment) in environments {
-                let source =
-                    serde_json::to_value(&environment.spec.source).context("serializing source")?;
                 let _ = writeln!(
                     rendered,
                     "{name}\t{}\t{}",
                     environment.provider,
-                    summarize_source(&source)
+                    summarize_source(&environment.spec.source)
                 );
             }
             write_stdout(rendered.as_bytes()).await
@@ -86,16 +85,12 @@ pub(crate) async fn write_environments(
 
 /// `image ubuntu:24.04`, `dockerfile`, `snapshot base` or `host_directory`.
 /// A Dockerfile's content is never printed.
-fn summarize_source(source: &Value) -> String {
+fn summarize_source(source: &Source) -> String {
     match source {
-        Value::Object(map) => match map.iter().next() {
-            Some((kind, _)) if kind == "dockerfile" => kind.clone(),
-            Some((kind, Value::String(value))) => format!("{kind} {value}"),
-            Some((kind, _)) => kind.clone(),
-            None => String::new(),
-        },
-        Value::String(kind) => kind.clone(),
-        other => other.to_string(),
+        Source::Image(image) => format!("image {image}"),
+        Source::Dockerfile(_) => "dockerfile".to_owned(),
+        Source::Snapshot(snapshot) => format!("snapshot {snapshot}"),
+        Source::HostDirectory => "host_directory".to_owned(),
     }
 }
 
@@ -151,8 +146,8 @@ pub(crate) async fn write_status(status: &Status, format: OutputFormat) -> Resul
             };
             let mut rendered = format!("sandbox: {}\n", display_ref(&status.reference));
             for (key, value) in &fields {
+                // An object with no fields set, or none at all, says nothing.
                 let empty = value.is_null()
-                    || value.as_object().is_some_and(serde_json::Map::is_empty)
                     || value
                         .as_object()
                         .is_some_and(|map| map.values().all(Value::is_null));

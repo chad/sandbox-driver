@@ -2,10 +2,12 @@ mod exec;
 mod files;
 mod spec;
 
+use std::collections::BTreeMap;
+
 use anyhow::{Context as _, Result, bail};
 use sandbox_driver::{
-    Expose, LabelFilter, ProviderEntry, ProviderName, Sandbox, SandboxId, SandboxRef, Sandboxes,
-    parse_duration_ms,
+    Durability, Expose, LabelFilter, ProviderEntry, ProviderName, Sandbox, SandboxId, SandboxRef,
+    Sandboxes,
 };
 use tokio::signal::ctrl_c;
 
@@ -20,7 +22,7 @@ use crate::output::{
 pub(crate) async fn execute(
     command: &Command,
     catalog: &Sandboxes,
-    providers: &[(ProviderName, ProviderEntry)],
+    providers: &BTreeMap<ProviderName, ProviderEntry>,
     output: OutputFormat,
 ) -> Result<u8> {
     match command {
@@ -49,49 +51,43 @@ pub(crate) async fn execute(
             Ok(0)
         }
         Command::Status(args) => {
-            let reference = resolve_ref(catalog, &args.sandbox).await?;
-            let status = attach(catalog, &reference).await?.status().await?;
-            write_status(&status, output).await?;
+            let (_, sandbox) = open(catalog, &args.sandbox).await?;
+            write_status(&sandbox.status().await?, output).await?;
             Ok(0)
         }
         Command::Start(args) => {
-            let reference = resolve_ref(catalog, &args.sandbox).await?;
-            attach(catalog, &reference).await?.start().await?;
+            let (reference, sandbox) = open(catalog, &args.sandbox).await?;
+            sandbox.start().await?;
             write_action(&reference, "started", output).await?;
             Ok(0)
         }
         Command::Stop(args) => {
-            let reference = resolve_ref(catalog, &args.sandbox).await?;
-            attach(catalog, &reference).await?.stop().await?;
+            let (reference, sandbox) = open(catalog, &args.sandbox).await?;
+            sandbox.stop().await?;
             write_action(&reference, "stopped", output).await?;
             Ok(0)
         }
         Command::Exec(args) => {
             require_raw_output(output, "exec")?;
             let spec = exec::exec_spec(&args.options, &args.command)?;
-            let reference = resolve_ref(catalog, &args.sandbox).await?;
-            let sandbox = attach(catalog, &reference).await?;
+            let (_, sandbox) = open(catalog, &args.sandbox).await?;
             exec::execute(sandbox.as_ref(), spec, args.options.stdin).await
         }
         Command::Shell(args) => {
             require_raw_output(output, "shell")?;
-            let reference = resolve_ref(catalog, &args.sandbox).await?;
-            exec::shell(attach(catalog, &reference).await?.as_ref()).await
+            let (_, sandbox) = open(catalog, &args.sandbox).await?;
+            exec::shell(sandbox.as_ref()).await
         }
         Command::Cp(args) => files::cp(catalog, args, output).await,
         Command::Ls(args) => files::ls(catalog, args, output).await,
         Command::Expose(args) => {
-            let reference = resolve_ref(catalog, &args.sandbox).await?;
-            let sandbox = attach(catalog, &reference).await?;
+            // Checked before the provider is reached, like every option.
             let ttl_ms = args
                 .ttl
                 .as_deref()
-                .map(|ttl| {
-                    parse_duration_ms(ttl)
-                        .ok()
-                        .context("--ttl needs a duration with a unit, such as 1h")
-                })
+                .map(|ttl| spec::duration("--ttl", ttl, "1h"))
                 .transpose()?;
+            let (_, sandbox) = open(catalog, &args.sandbox).await?;
             let exposure = sandbox
                 .ports()
                 .expose(args.port, Expose {
@@ -139,14 +135,7 @@ async fn provider(
 }
 
 async fn create(catalog: &Sandboxes, args: &CreateArgs, output: OutputFormat) -> Result<u8> {
-    let builder = catalog.builder(&args.environment).await?;
-    let builder = spec::apply(builder, args).await?;
-    let entry = catalog.environment(&args.environment).await?.provider;
-    require_outlives_command(catalog, entry.as_str(), "create").await?;
-    let sandbox = builder
-        .create()
-        .await
-        .with_context(|| format!("creating a sandbox from environment {}", args.environment))?;
+    let sandbox = create_sandbox(catalog, args, Some("create")).await?;
     let reference = sandbox.reference();
     match output {
         OutputFormat::Json => write_status(&sandbox.status().await?, output).await?,
@@ -155,12 +144,36 @@ async fn create(catalog: &Sandboxes, args: &CreateArgs, output: OutputFormat) ->
     Ok(0)
 }
 
+/// Creates a sandbox from the environment `args` names, with the
+/// command-line changes applied. `must_outlive` names an operation that
+/// needs the sandbox to survive this command.
+async fn create_sandbox(
+    catalog: &Sandboxes,
+    args: &CreateArgs,
+    must_outlive: Option<&str>,
+) -> Result<Box<dyn Sandbox>> {
+    let builder = catalog.builder(&args.environment).await?;
+    let builder = spec::apply(builder, args).await?;
+    if let Some(what) = must_outlive {
+        require_outlives_command(catalog, &args.environment, what).await?;
+    }
+    builder
+        .create()
+        .await
+        .with_context(|| format!("creating a sandbox from environment {}", args.environment))
+}
+
 /// Refuses an operation whose sandbox would be gone when this command
 /// exits: a provider of `process` durability ends its sandboxes with the
 /// process that made them.
-async fn require_outlives_command(catalog: &Sandboxes, entry: &str, what: &str) -> Result<()> {
-    let descriptor = catalog.provider(entry)?.describe().await?;
-    if !exec::outlives_command(descriptor.durability) {
+async fn require_outlives_command(
+    catalog: &Sandboxes,
+    environment: &str,
+    what: &str,
+) -> Result<()> {
+    let entry = catalog.environment(environment).await?.provider;
+    let descriptor = catalog.provider(entry.as_str())?.describe().await?;
+    if descriptor.durability == Durability::Process {
         bail!(
             "sandboxes of provider {entry} end when this command exits, so {what} would leave \
              nothing behind; use `lithos-sandbox run` without --keep"
@@ -169,10 +182,21 @@ async fn require_outlives_command(catalog: &Sandboxes, entry: &str, what: &str) 
     Ok(())
 }
 
+/// Folds a command's result with the result of the cleanup that followed
+/// it. The command's own error wins; `also` introduces a cleanup failure
+/// reported beside it.
+pub(crate) fn after_cleanup(result: Result<u8>, cleanup: Result<()>, also: &str) -> Result<u8> {
+    match (result, cleanup) {
+        (Ok(code), Ok(())) => Ok(code),
+        (Ok(_), Err(error)) | (Err(error), Ok(())) => Err(error),
+        (Err(error), Err(cleanup)) => Err(error.context(format!("{also}: {cleanup:#}"))),
+    }
+}
+
 /// Reads a sandbox ref: `<entry>/<id>` as `create` prints it, or the JSON
 /// reference from `--output json`. The short form takes its namespace from
 /// the entry's provider now; the JSON form is checked against it.
-pub(super) async fn resolve_ref(catalog: &Sandboxes, text: &str) -> Result<SandboxRef> {
+async fn resolve_ref(catalog: &Sandboxes, text: &str) -> Result<SandboxRef> {
     if text.trim_start().starts_with('{') {
         return serde_json::from_str(text).context("parsing the sandbox reference as JSON");
     }
@@ -192,14 +216,17 @@ pub(super) async fn resolve_ref(catalog: &Sandboxes, text: &str) -> Result<Sandb
     })
 }
 
-pub(super) async fn attach(
+/// Resolves a sandbox ref and attaches to the sandbox it names.
+pub(super) async fn open(
     catalog: &Sandboxes,
-    reference: &SandboxRef,
-) -> Result<Box<dyn Sandbox>> {
-    catalog
-        .attach(reference)
+    text: &str,
+) -> Result<(SandboxRef, Box<dyn Sandbox>)> {
+    let reference = resolve_ref(catalog, text).await?;
+    let sandbox = catalog
+        .attach(&reference)
         .await
-        .with_context(|| format!("attaching sandbox {}", display_ref(reference)))
+        .with_context(|| format!("attaching sandbox {}", display_ref(&reference)))?;
+    Ok((reference, sandbox))
 }
 
 fn require_raw_output(output: OutputFormat, command: &str) -> Result<()> {

@@ -1,20 +1,20 @@
-use std::io::Result as IoResult;
 use std::process::Stdio;
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result, bail};
 use sandbox_driver::{
-    Durability, Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, OutputStream, Sandbox,
-    Sandboxes, Termination, parse_duration_ms,
+    Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, OutputStream, Sandbox, Sandboxes,
+    Termination,
 };
-use tokio::io::{self, AsyncWrite, AsyncWriteExt as _, stderr, stdout};
+use tokio::io;
 use tokio::process::Command as TokioCommand;
 use tokio::signal::ctrl_c;
 use tokio_util::sync::CancellationToken;
 
-use super::spec::{apply, parse_assignments};
+use super::spec::{duration, parse_assignments};
+use super::{after_cleanup, create_sandbox};
 use crate::cli::{ExecOptions, RunArgs};
-use crate::output::{display_ref, write_stderr};
+use crate::output::{display_ref, write_stderr, write_stdout};
 
 pub(super) const DRIVER_ERROR_EXIT: u8 = 125;
 const TIMEOUT_EXIT: u8 = 124;
@@ -30,21 +30,7 @@ pub(super) async fn run(catalog: &Sandboxes, args: &RunArgs) -> Result<u8> {
     // Every option is checked before anything is created: a typo must not
     // cost a sandbox.
     let spec = exec_spec(&args.exec, &args.command)?;
-    let builder = catalog.builder(&args.create.environment).await?;
-    let builder = apply(builder, &args.create).await?;
-    if args.keep {
-        let entry = &catalog
-            .environment(&args.create.environment)
-            .await?
-            .provider;
-        super::require_outlives_command(catalog, entry.as_str(), "--keep").await?;
-    }
-    let sandbox = builder.create().await.with_context(|| {
-        format!(
-            "creating a sandbox from environment {}",
-            args.create.environment
-        )
-    })?;
+    let sandbox = create_sandbox(catalog, &args.create, args.keep.then_some("--keep")).await?;
     let reference = sandbox.reference();
     let outcome = execute(sandbox.as_ref(), spec, args.exec.stdin).await;
 
@@ -57,13 +43,7 @@ pub(super) async fn run(catalog: &Sandboxes, args: &RunArgs) -> Result<u8> {
         .destroy(&reference)
         .await
         .with_context(|| format!("destroying sandbox {}", display_ref(&reference)));
-    match (outcome, cleanup) {
-        (Ok(code), Ok(())) => Ok(code),
-        (Ok(_), Err(error)) | (Err(error), Ok(())) => Err(error),
-        (Err(error), Err(cleanup)) => Err(error.context(format!(
-            "the sandbox also could not be destroyed: {cleanup:#}"
-        ))),
-    }
+    after_cleanup(outcome, cleanup, "the sandbox also could not be destroyed")
 }
 
 /// The command and its exec options as an `ExecSpec`.
@@ -72,11 +52,7 @@ pub(super) fn exec_spec(options: &ExecOptions, command: &[String]) -> Result<Exe
     spec.env = parse_assignments(&options.exec_env, "exec-env")?;
     spec.working_directory.clone_from(&options.workdir);
     if let Some(timeout) = &options.timeout {
-        spec.timeout_ms = Some(
-            parse_duration_ms(timeout)
-                .ok()
-                .context("--timeout needs a duration with a unit, such as 30s or 5m")?,
-        );
+        spec.timeout_ms = Some(duration("--timeout", timeout, "30s or 5m")?);
     }
     Ok(spec)
 }
@@ -114,10 +90,7 @@ pub(super) async fn execute(sandbox: &dyn Sandbox, spec: ExecSpec, stdin: bool) 
     };
 
     Ok(match outcome.termination {
-        Termination::Exited => outcome
-            .exit_code
-            .and_then(|code| u8::try_from(code).ok())
-            .unwrap_or(DRIVER_ERROR_EXIT),
+        Termination::Exited => exit_byte(outcome.exit_code),
         Termination::TimedOut => {
             write_stderr(b"command timed out\n").await?;
             TIMEOUT_EXIT
@@ -154,39 +127,26 @@ pub(super) async fn shell(sandbox: &dyn Sandbox) -> Result<u8> {
         .status()
         .await
         .context("running the provider's shell command")?;
-    Ok(status
-        .code()
-        .and_then(|code| u8::try_from(code).ok())
-        .unwrap_or(DRIVER_ERROR_EXIT))
+    Ok(exit_byte(status.code()))
 }
 
-/// Refuses `create` and `run --keep` when the provider's sandboxes end with
-/// the process that created them, which for the CLI is this command.
-pub(super) fn outlives_command(durability: Durability) -> bool {
-    durability != Durability::Process
+/// A command's exit code as this process can report it.
+fn exit_byte(code: Option<i32>) -> u8 {
+    code.and_then(|code| u8::try_from(code).ok())
+        .unwrap_or(DRIVER_ERROR_EXIT)
 }
 
 fn output_sink() -> OutputSink {
     Arc::new(|stream, bytes| {
         Box::pin(async move {
             let result = match stream {
-                OutputStream::Stderr => write_and_flush(stderr(), &bytes).await,
-                OutputStream::Stdout | OutputStream::Terminal => {
-                    write_and_flush(stdout(), &bytes).await
-                }
+                OutputStream::Stderr => write_stderr(&bytes).await,
+                OutputStream::Stdout | OutputStream::Terminal => write_stdout(&bytes).await,
             };
             result.map_err(|error| Error::Transport {
-                message: format!("writing command output: {error}"),
+                message: format!("writing command output: {error:#}"),
                 outcome: MutationOutcome::Unknown,
             })
         })
     })
-}
-
-async fn write_and_flush<W>(mut writer: W, bytes: &[u8]) -> IoResult<()>
-where
-    W: AsyncWrite + Unpin,
-{
-    writer.write_all(bytes).await?;
-    writer.flush().await
 }

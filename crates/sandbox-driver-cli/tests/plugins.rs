@@ -40,8 +40,8 @@ async fn a_pinned_plugin_entry_runs_commands_through_the_plugin() {
     assert_eq!(stdout(&run), "through the plugin\n");
 }
 
-#[tokio::test]
-async fn an_unpinned_or_mismatched_plugin_is_never_launched() {
+#[test]
+fn an_unpinned_or_mismatched_plugin_is_never_launched() {
     let fixture = Fixture::new();
     let marker = fixture.root.join("launched");
     let script = fixture.script(&format!(

@@ -3,6 +3,7 @@
 
 use std::collections::BTreeMap;
 use std::env;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -71,7 +72,7 @@ impl Catalog {
             ("organization", "DAYTONA_ORGANIZATION_ID"),
             ("target", "DAYTONA_TARGET"),
         ] {
-            if let Some(value) = env::var(variable).ok().filter(|value| !value.is_empty()) {
+            if let Some(value) = nonempty_env(variable).and_then(|value| value.into_string().ok()) {
                 daytona.config.insert(key.to_owned(), Value::String(value));
             }
         }
@@ -107,18 +108,13 @@ impl Catalog {
     /// protocol 3 loader for every other kind. Nothing starts until a
     /// provider entry is first used.
     pub(crate) fn open(self) -> Result<Sandboxes> {
-        let builtins: [Arc<dyn ProviderFactory>; 3] = [
-            Arc::new(HostFactory),
-            Arc::new(DockerFactory),
-            Arc::new(DaytonaFactory),
-        ];
-        let kinds = [
-            host_schemas().kind,
-            DockerFactory::schemas().kind,
-            DaytonaFactory::kind(),
+        let builtins: [(_, Arc<dyn ProviderFactory>); 3] = [
+            (host_schemas().kind, Arc::new(HostFactory)),
+            (DockerFactory::schemas().kind, Arc::new(DockerFactory)),
+            (DaytonaFactory::kind(), Arc::new(DaytonaFactory)),
         ];
         let mut registry = Registry::new().plugins(Arc::new(PluginLoader::default()));
-        for (kind, factory) in kinds.into_iter().zip(builtins) {
+        for (kind, factory) in builtins {
             registry = registry
                 .builtin(kind, factory)
                 .context("registering built-in providers")?;
@@ -140,7 +136,7 @@ struct EnvironmentSecrets;
 #[async_trait]
 impl SecretResolver for EnvironmentSecrets {
     async fn resolve(&self, name: &str) -> Result<Option<String>, Error> {
-        Ok(env::var(name).ok().filter(|value| !value.is_empty()))
+        Ok(nonempty_env(name).and_then(|value| value.into_string().ok()))
     }
 }
 
@@ -152,8 +148,13 @@ fn name(text: &str) -> ProviderName {
     ProviderName::try_new(text).expect("static name")
 }
 
+/// A variable that is set to something; an empty value counts as unset.
+fn nonempty_env(name: &str) -> Option<OsString> {
+    env::var_os(name).filter(|value| !value.is_empty())
+}
+
 fn has_env(name: &str) -> bool {
-    env::var_os(name).is_some_and(|value| !value.is_empty())
+    nonempty_env(name).is_some()
 }
 
 /// Plugin paths must be absolute; a leading `~/` is the one shorthand the
@@ -169,18 +170,13 @@ async fn find_config_path(explicit_path: Option<&Path>) -> Result<Option<PathBuf
     if let Some(path) = explicit_path {
         return Ok(Some(path.to_path_buf()));
     }
-    if let Some(path) = env::var_os(CONFIG_ENV).filter(|value| !value.is_empty()) {
+    if let Some(path) = nonempty_env(CONFIG_ENV) {
         return Ok(Some(PathBuf::from(path)));
     }
 
-    let candidate = env::var_os("XDG_CONFIG_HOME")
-        .filter(|value| !value.is_empty())
+    let candidate = nonempty_env("XDG_CONFIG_HOME")
         .map(PathBuf::from)
-        .or_else(|| {
-            env::var_os("HOME")
-                .filter(|value| !value.is_empty())
-                .map(|home| PathBuf::from(home).join(".config"))
-        })
+        .or_else(|| nonempty_env("HOME").map(|home| PathBuf::from(home).join(".config")))
         .map(|root| root.join("sandbox-driver/config.toml"));
 
     match candidate {

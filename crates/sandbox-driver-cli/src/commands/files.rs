@@ -2,10 +2,10 @@ use std::path::Path;
 
 use anyhow::{Context as _, Result, bail};
 use sandbox_driver::{SandboxRef, Sandboxes};
-use tokio::fs::File;
+use tokio::fs::{File, metadata};
 use tokio::io::{AsyncWriteExt as _, copy, stdin, stdout};
 
-use super::{attach, resolve_ref};
+use super::open;
 use crate::cli::{CpArgs, LsArgs, OutputFormat};
 use crate::output::{display_ref, write_action, write_files};
 
@@ -34,8 +34,8 @@ fn location(text: &str) -> Location<'_> {
 pub(super) async fn cp(catalog: &Sandboxes, args: &CpArgs, output: OutputFormat) -> Result<u8> {
     match (location(&args.source), location(&args.destination)) {
         (Location::Local(local), Location::Remote { sandbox, path }) => {
-            let reference = resolve_ref(catalog, sandbox).await?;
-            let handle = attach(catalog, &reference).await?;
+            // The local side is opened first: a mistyped path must not
+            // cost a provider round trip.
             let bytes = if local == "-" {
                 Box::pin(stdin()) as _
             } else {
@@ -45,6 +45,7 @@ pub(super) async fn cp(catalog: &Sandboxes, args: &CpArgs, output: OutputFormat)
                         .with_context(|| format!("opening {local}"))?,
                 ) as _
             };
+            let (reference, handle) = open(catalog, sandbox).await?;
             handle
                 .files()
                 .put(path, bytes)
@@ -53,8 +54,7 @@ pub(super) async fn cp(catalog: &Sandboxes, args: &CpArgs, output: OutputFormat)
             report(&reference, "copied to", output).await
         }
         (Location::Remote { sandbox, path }, Location::Local(local)) => {
-            let reference = resolve_ref(catalog, sandbox).await?;
-            let handle = attach(catalog, &reference).await?;
+            let (reference, handle) = open(catalog, sandbox).await?;
             let mut bytes = handle
                 .files()
                 .get(path, None)
@@ -66,7 +66,7 @@ pub(super) async fn cp(catalog: &Sandboxes, args: &CpArgs, output: OutputFormat)
                 out.flush().await.context("flushing stdout")?;
                 return Ok(0);
             }
-            let local = if Path::new(local).is_dir() {
+            let local = if metadata(local).await.is_ok_and(|found| found.is_dir()) {
                 let name = Path::new(path)
                     .file_name()
                     .with_context(|| format!("{path} names no file"))?;
@@ -96,9 +96,8 @@ pub(super) async fn ls(catalog: &Sandboxes, args: &LsArgs, output: OutputFormat)
     let Location::Remote { sandbox, path } = location(&args.path) else {
         bail!("ls takes SANDBOX:PATH, such as docker/1a2b:/tmp");
     };
-    let reference = resolve_ref(catalog, sandbox).await?;
-    let entries = attach(catalog, &reference)
-        .await?
+    let (reference, handle) = open(catalog, sandbox).await?;
+    let entries = handle
         .files()
         .list(path, args.depth)
         .await

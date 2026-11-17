@@ -37,24 +37,14 @@ async fn main() -> ExitCode {
 /// providers, such as Host.
 async fn run(cli: &Cli) -> Result<u8> {
     let catalog = config::Catalog::load(cli.config.as_deref()).await?;
-    let providers: Vec<_> = catalog
-        .providers
-        .iter()
-        .map(|(name, entry)| (name.clone(), entry.clone()))
-        .collect();
+    let providers = catalog.providers.clone();
     let sandboxes = catalog.open()?;
     let result = commands::execute(&cli.command, &sandboxes, &providers, cli.output).await;
     let shutdown = sandboxes
         .shutdown()
         .await
         .context("shutting down providers");
-    match (result, shutdown) {
-        (Ok(code), Ok(())) => Ok(code),
-        (Ok(_), Err(error)) | (Err(error), Ok(())) => Err(error),
-        (Err(error), Err(shutdown)) => {
-            Err(error.context(format!("providers also failed to shut down: {shutdown:#}")))
-        }
-    }
+    commands::after_cleanup(result, shutdown, "providers also failed to shut down")
 }
 
 fn configure_diagnostics(verbosity: u8) -> Result<()> {

@@ -3,7 +3,9 @@ use std::num::NonZeroU64;
 use std::path::Path;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::{SandboxBuilder, SandboxSpec, SnapshotId, Source, parse_size_mib};
+use sandbox_driver::{
+    SandboxBuilder, SandboxSpec, SnapshotId, Source, parse_duration_ms, parse_size_mib,
+};
 use serde_json::Value;
 use tokio::fs::{read, read_to_string};
 use tokio::io::{AsyncReadExt as _, stdin};
@@ -85,6 +87,13 @@ fn size(option: &str, value: &str) -> Result<NonZeroU64> {
         .ok()
         .and_then(NonZeroU64::new)
         .with_context(|| format!("{option} needs a positive size with a unit, such as 4GB"))
+}
+
+/// A duration option's value in milliseconds. `example` shows the form.
+pub(super) fn duration(option: &str, value: &str, example: &str) -> Result<u64> {
+    parse_duration_ms(value)
+        .ok()
+        .with_context(|| format!("{option} needs a duration with a unit, such as {example}"))
 }
 
 pub(super) fn parse_assignments(
