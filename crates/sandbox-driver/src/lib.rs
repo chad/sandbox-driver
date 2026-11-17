@@ -17,6 +17,7 @@ mod error;
 mod execution;
 mod failure;
 mod file_ops;
+mod git;
 mod id;
 mod identity;
 #[doc(hidden)]
@@ -54,6 +55,11 @@ pub use execution::{
 };
 pub use failure::{CommandError, CommandFailure, FAILURE_TAIL_BYTES, OutputTail};
 pub use file_ops::{FileStat, create_dir_all, path_exists, remove_path, rename_path, stat_path};
+pub use git::{
+    GitChange, GitCommit, GitDiffEntry, GitDiffOptions, GitError, GitFailure, GitFailureKind,
+    GitIdentity, GitLogOptions, GitNumstat, GitRevisionRange, git_blob_sizes, git_blobs,
+    git_diff_entries, git_diff_numstat, git_diff_patch, git_log,
+};
 pub use id::{
     EnvironmentName, InvalidIdError, NamespaceId, ProviderKind, ProviderName, SandboxId,
     Sha256Digest, SnapshotId,

@@ -114,6 +114,7 @@ async fn host_passes_the_shared_contract() {
     .with_peer(peer.clone())
     .with_shell()
     .with_search()
+    .with_git()
     .run()
     .await;
     eprintln!("{report}");

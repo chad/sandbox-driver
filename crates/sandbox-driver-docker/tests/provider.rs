@@ -109,15 +109,16 @@ async fn docker_passes_the_shared_contract_suite() {
     catalog.shutdown().await.expect("shutdown");
 }
 
-/// `BusyBox` `grep` cannot serve the search the library derives over exec, so
-/// that check runs on a GNU userland.
+/// `BusyBox` `grep` cannot serve the search the library derives over exec,
+/// and the `BusyBox` image has no `git`, so those checks run on a GNU
+/// userland.
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "requires a live Docker daemon"]
 #[expect(
     clippy::print_stderr,
     reason = "the per-check report is the test's evidence"
 )]
-async fn docker_passes_the_derived_search_check_on_a_gnu_userland() {
+async fn docker_passes_the_derived_search_and_git_checks_on_a_gnu_userland() {
     let workload = SandboxSpec::new(Source::Image(GNU_IMAGE.to_owned()));
     let catalog = catalog(BTreeMap::from([("gnu", workload)]));
     let report = Conformance::new(catalog.clone(), "gnu", Commands {
@@ -126,6 +127,7 @@ async fn docker_passes_the_derived_search_check_on_a_gnu_userland() {
         long_running: ExecSpec::argv(["sh", "-c", "echo ready; exec sleep 600"]),
     })
     .with_search()
+    .with_git()
     .run()
     .await;
     eprintln!("{report}");
