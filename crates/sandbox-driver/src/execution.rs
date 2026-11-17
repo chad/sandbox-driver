@@ -14,8 +14,6 @@ use super::provider::ByteStream;
 use super::workload::{validate_argv, validate_env, validate_name};
 use crate::redact::EnvKeys;
 
-const SHELL: &str = "sh";
-
 /// Hands the script, its first argument, to Bash when there is one. `exec`
 /// replaces this launcher, so the script's own exit status is the command's.
 const SHELL_LAUNCHER: &str = r#"unset BASH_ENV
@@ -58,10 +56,11 @@ impl ExecSpec {
     /// own `env` set it. The script receives no positional arguments.
     pub fn shell(script: impl Into<String>) -> Self {
         Self::argv([
-            SHELL.to_owned(),
+            "sh".to_owned(),
             "-c".to_owned(),
             SHELL_LAUNCHER.to_owned(),
-            SHELL.to_owned(),
+            // The launcher's `$0`; the script is its `$1`.
+            "sh".to_owned(),
             script.into(),
         ])
     }

@@ -217,7 +217,13 @@ impl Retained {
 
     fn take(&mut self) -> CapturedOutput {
         let mut bytes = mem::take(&mut self.head);
-        bytes.extend(self.tail.drain(..));
+        // Taking the tail frees its buffer even while a provider keeps the
+        // sink alive.
+        let tail = mem::take(&mut self.tail);
+        let (front, back) = tail.as_slices();
+        bytes.reserve_exact(tail.len());
+        bytes.extend_from_slice(front);
+        bytes.extend_from_slice(back);
         CapturedOutput {
             bytes,
             omitted_bytes: mem::take(&mut self.omitted),

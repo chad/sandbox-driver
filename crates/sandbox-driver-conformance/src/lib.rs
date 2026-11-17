@@ -89,8 +89,9 @@ impl Conformance {
     }
 
     /// Declares that the environment's workload provides POSIX `sh`, which
-    /// adds a check of the library's shell helper. The exec contract itself
-    /// assumes no shell, so the check is opt-in.
+    /// adds a check that the provider carries a shell spec's argv intact,
+    /// keeps stdout and stderr apart, and reports the script's exit code.
+    /// The exec contract itself assumes no shell, so the check is opt-in.
     #[must_use]
     pub fn with_shell(mut self) -> Self {
         self.shell = true;
