@@ -7,6 +7,8 @@
 //! `mise run test:live` runs it with credentials from the process
 //! environment or the workspace `.env` file. Every created sandbox carries
 //! a unique label and a cleanup guard.
+//!
+//! The process-level checks that need no backend run against Host.
 
 use std::collections::BTreeMap;
 use std::ffi::OsString;
@@ -58,6 +60,45 @@ fn daytona_cli_workflow() {
 
 /// Everything a person checks by hand: describe, one-shot runs, then a
 /// persistent sandbox through find, exec, files, stop/start and destroy.
+/// The command decides when `--stdin` ends: a terminal or pipe that stays
+/// open after the command exits must not hold the CLI open with it.
+#[test]
+fn a_finished_command_exits_while_local_stdin_stays_open() {
+    let mut child = CliRunner::new()
+        .command()
+        .args(["run", "host", "--stdin", "--", "echo", "done"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("lithos-sandbox process starts");
+    let held_open = child.stdin.take().expect("child stdin is piped");
+
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let exited = loop {
+        if child.try_wait().expect("poll lithos-sandbox").is_some() {
+            break true;
+        }
+        if Instant::now() >= deadline {
+            break false;
+        }
+        thread::sleep(Duration::from_millis(50));
+    };
+    if !exited {
+        child.kill().expect("stop the stuck lithos-sandbox");
+    }
+    let output = child.wait_with_output().expect("wait for lithos-sandbox");
+    drop(held_open);
+
+    assert!(
+        exited,
+        "the CLI waited for stdin to close: {}",
+        diagnostic(&output)
+    );
+    assert_success(&output, "host run with stdin held open");
+    assert_eq!(stdout_text(&output), "done\n");
+}
+
 fn workflow(cli: &CliRunner, provider: &str, durability: &str) {
     let describe = successful_json(
         &run(cli

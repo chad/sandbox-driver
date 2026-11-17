@@ -6,7 +6,6 @@ use sandbox_driver::{
     Error, ExecControls, ExecSpec, MutationOutcome, OutputSink, OutputStream, Sandbox, Sandboxes,
     Termination,
 };
-use tokio::io;
 use tokio::process::Command as TokioCommand;
 use tokio::signal::ctrl_c;
 use tokio_util::sync::CancellationToken;
@@ -15,6 +14,7 @@ use super::spec::{duration, parse_assignments};
 use super::{after_cleanup, create_sandbox};
 use crate::cli::{ExecOptions, RunArgs};
 use crate::output::{display_ref, write_stderr, write_stdout};
+use crate::stdin::local_stdin;
 
 pub(super) const DRIVER_ERROR_EXIT: u8 = 125;
 const TIMEOUT_EXIT: u8 = 124;
@@ -65,7 +65,7 @@ pub(super) async fn execute(sandbox: &dyn Sandbox, spec: ExecSpec, stdin: bool) 
     // KILL. There is no automatic escalation.
     let (term, kill) = (CancellationToken::new(), CancellationToken::new());
     let controls = ExecControls {
-        stdin:  stdin.then(|| Box::pin(io::stdin()) as _),
+        stdin:  stdin.then(|| Box::pin(local_stdin()) as _),
         sink:   Some(output_sink()),
         term:   Some(term.clone()),
         kill:   Some(kill.clone()),

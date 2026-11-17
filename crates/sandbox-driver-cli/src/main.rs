@@ -2,6 +2,7 @@ mod cli;
 mod commands;
 mod config;
 mod output;
+mod stdin;
 
 use std::fmt::Write as _;
 use std::io::stderr;

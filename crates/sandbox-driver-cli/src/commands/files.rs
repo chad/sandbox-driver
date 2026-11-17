@@ -3,11 +3,12 @@ use std::path::Path;
 use anyhow::{Context as _, Result, bail};
 use sandbox_driver::{SandboxRef, Sandboxes};
 use tokio::fs::{File, metadata};
-use tokio::io::{AsyncWriteExt as _, copy, stdin, stdout};
+use tokio::io::{AsyncWriteExt as _, copy, stdout};
 
 use super::open;
 use crate::cli::{CpArgs, LsArgs, OutputFormat};
 use crate::output::{display_ref, write_action, write_files};
+use crate::stdin::local_stdin;
 
 /// One side of `cp`: a local path, `-` for stdin or stdout, or
 /// `SANDBOX:PATH`.
@@ -37,7 +38,7 @@ pub(super) async fn cp(catalog: &Sandboxes, args: &CpArgs, output: OutputFormat)
             // The local side is opened first: a mistyped path must not
             // cost a provider round trip.
             let bytes = if local == "-" {
-                Box::pin(stdin()) as _
+                Box::pin(local_stdin()) as _
             } else {
                 Box::pin(
                     File::open(local)
