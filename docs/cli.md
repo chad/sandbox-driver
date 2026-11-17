@@ -46,7 +46,8 @@ lithos-sandbox destroy "$sb"
 
 `--output json` on `create` or `status` prints the full status, whose
 `reference` is the durable `{provider, namespace, id}` ref. Every command
-that takes a sandbox also accepts that JSON object; the short form takes its
+that takes a sandbox on its own also accepts that JSON object; `cp` and `ls`,
+which take `SANDBOX:PATH`, need the short form. The short form takes its
 namespace from the entry's provider at the time of the command.
 
 ## Commands
