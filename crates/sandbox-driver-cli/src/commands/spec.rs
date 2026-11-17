@@ -1,68 +1,76 @@
 use std::collections::BTreeMap;
-use std::num::NonZeroU64;
 use std::path::Path;
 
 use anyhow::{Context as _, Result, bail};
-use sandbox_driver::{
-    SandboxBuilder, SandboxSpec, SnapshotId, Source, parse_duration_ms, parse_size_mib,
-};
+use sandbox_driver::{SandboxBuilder, SandboxSpec, SnapshotId, Source, parse_duration_ms};
 use serde_json::Value;
 use tokio::fs::{read, read_to_string};
 use tokio::io::{AsyncReadExt as _, stdin};
 
 use crate::cli::CreateArgs;
 
-/// Applies the command-line changes to the environment's template. Options
-/// that were not given leave the template's value in place.
+/// Applies the command-line changes to the environment's template through
+/// the builder's setters. Options that were not given leave the template's
+/// value in place; `--spec` replaces the whole template first.
 pub(super) async fn apply(builder: SandboxBuilder, args: &CreateArgs) -> Result<SandboxBuilder> {
-    let mut spec = match &args.spec {
-        Some(path) => read_spec(path).await?,
-        None => builder.resolved_spec().clone(),
+    let mut builder = match &args.spec {
+        Some(path) => builder.spec(read_spec(path).await?),
+        None => builder,
     };
+    // The builder has no setter for these two, so they edit the spec.
+    if args.snapshot.is_some() || args.name.is_some() {
+        let mut spec = builder.resolved_spec().clone();
+        if let Some(snapshot) = &args.snapshot {
+            spec.source = Source::Snapshot(
+                SnapshotId::try_new(snapshot.clone()).context("validating --snapshot")?,
+            );
+        }
+        if let Some(name) = &args.name {
+            spec.name = Some(name.clone());
+        }
+        builder = builder.spec(spec);
+    }
     if let Some(image) = &args.image {
-        spec.source = Source::Image(image.clone());
+        builder = builder.image(image);
     }
     if let Some(path) = &args.dockerfile {
         let content = read_to_string(path)
             .await
             .with_context(|| format!("reading Dockerfile {}", path.display()))?;
-        spec.source = Source::Dockerfile(content);
-    }
-    if let Some(snapshot) = &args.snapshot {
-        spec.source = Source::Snapshot(
-            SnapshotId::try_new(snapshot.clone()).context("validating --snapshot")?,
-        );
-    }
-    if let Some(name) = &args.name {
-        spec.name = Some(name.clone());
+        builder = builder.dockerfile(&content);
     }
     if let Some(cpu) = args.cpu {
-        spec.resources.cpu_cores = Some(cpu);
+        builder = builder.cpu(cpu);
     }
+    // Sizes are checked by the builder; a bad one fails `create` before
+    // anything is admitted.
     if let Some(memory) = &args.memory {
-        spec.resources.memory_mb = Some(size("--memory", memory)?);
+        builder = builder.memory(memory);
     }
     if let Some(disk) = &args.disk {
-        spec.resources.disk_mb = Some(size("--disk", disk)?);
+        builder = builder.disk(disk);
     }
-    spec.env.extend(parse_assignments(&args.env, "env")?);
-    spec.labels
-        .extend(parse_assignments(&args.labels, "label")?);
+    for (key, value) in parse_assignments(&args.env, "env")? {
+        builder = builder.env(&key, &value);
+    }
+    for (key, value) in parse_assignments(&args.labels, "label")? {
+        builder = builder.label(&key, &value);
+    }
     if let Some(workspace) = &args.workspace {
-        spec.working_directory = Some(workspace.clone());
+        builder = builder.working_directory(workspace);
     }
     if let Some(user) = &args.user {
-        spec.user = Some(user.clone());
+        builder = builder.user(user);
     }
     if let Some(network) = args.network {
-        spec.network = network.into();
+        builder = builder.network(network.into());
     }
     if let Some(config) = &args.provider_config {
         let values: BTreeMap<String, Value> =
             serde_json::from_str(config).context("parsing --provider-config as a JSON object")?;
-        spec.provider_config.extend(values);
+        builder = builder.provider_config(values);
     }
-    Ok(builder.spec(spec))
+    Ok(builder)
 }
 
 async fn read_spec(path: &Path) -> Result<SandboxSpec> {
@@ -80,13 +88,6 @@ async fn read_spec(path: &Path) -> Result<SandboxSpec> {
         (contents, path.display().to_string())
     };
     serde_json::from_slice(&contents).with_context(|| format!("parsing SandboxSpec from {source}"))
-}
-
-fn size(option: &str, value: &str) -> Result<NonZeroU64> {
-    parse_size_mib(value)
-        .ok()
-        .and_then(NonZeroU64::new)
-        .with_context(|| format!("{option} needs a positive size with a unit, such as 4GB"))
 }
 
 /// A duration option's value in milliseconds. `example` shows the form.
@@ -133,11 +134,5 @@ mod tests {
         let empty_key =
             parse_assignments(&["=value".to_owned()], "env").expect_err("empty key fails");
         assert!(empty_key.to_string().contains("key must not be empty"));
-    }
-
-    #[test]
-    fn sizes_need_a_unit_and_read_gigabytes_as_gibibytes() {
-        assert_eq!(size("--memory", "4GB").unwrap().get(), 4096);
-        assert!(size("--memory", "0GB").is_err());
     }
 }

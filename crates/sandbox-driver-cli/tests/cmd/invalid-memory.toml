@@ -3,7 +3,8 @@ args = ["run", "host", "--memory", "4", "--", "/bin/true"]
 status.code = 1
 stdout = ""
 stderr = """
-error: --memory needs a positive size with a unit, such as 4GB
+error: creating a sandbox from environment host
+  caused by: invalid spec at resources.memory: requires a positive size with units
 """
 
 [env]
