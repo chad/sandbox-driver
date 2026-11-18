@@ -171,13 +171,12 @@ pub(super) fn machine_name(hint: Option<&str>) -> String {
             name.push('-');
         }
     }
-    name.truncate(MAX_NAME);
-    let name = name.trim_end_matches('-');
-    match name.chars().next() {
-        Some(first) if first.is_ascii_lowercase() => name.to_owned(),
-        Some(_) => format!("sb-{name}").chars().take(MAX_NAME).collect(),
-        None => String::new(),
+    if name.starts_with(|c: char| c.is_ascii_digit()) {
+        name.insert_str(0, "sb-");
     }
+    // Every character is ASCII, so the cut falls on a character boundary.
+    name.truncate(MAX_NAME);
+    name.trim_end_matches('-').to_owned()
 }
 
 /// The network policy a machine has from its egress allowlist.
@@ -276,5 +275,13 @@ mod tests {
         assert_eq!(machine_name(Some("42")), "sb-42");
         assert_eq!(machine_name(Some("--")), "");
         assert_eq!(machine_name(None), "");
+    }
+
+    #[test]
+    fn a_prefixed_name_hint_is_cut_back_to_a_letter_or_digit() {
+        let hint = format!("{}-tail", "1".repeat(36));
+        let name = machine_name(Some(&hint));
+        assert!(name.len() <= MAX_NAME, "{name}");
+        assert!(!name.ends_with('-'), "{name}");
     }
 }

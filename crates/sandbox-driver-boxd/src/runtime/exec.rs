@@ -110,15 +110,16 @@ fn line(token: &str, directory: &str, env: &BTreeMap<String, String>, argv: &[St
          && ( : > {LOCKS}/.{token} ) 2>/dev/null; then \
          for f in {LOCKS}/*; do [ -e \"$f\" ] && flock -n \"$f\" rm -f \"$f\"; done; \
          exec 9>{LOCKS}/.{token} && flock -n 9 && mv {LOCKS}/.{token} {LOCKS}/{token}; \
-         fi; cd {} && exec env",
+         fi; cd {} && exec env --",
         quote(directory)
     );
     for (key, value) in env {
         line.push(' ');
         line.push_str(&quote(&format!("{key}={value}")));
     }
-    // `env` reads leading NAME=VALUE words as assignments; `--` would not
-    // stop that, so a program name containing `=` goes through `sh -c`.
+    // `--` keeps `env` from reading a program or variable that starts with
+    // `-` as an option. It still reads leading NAME=VALUE words as
+    // assignments, so a program name containing `=` goes through `sh -c`.
     if argv.first().is_some_and(|program| program.contains('=')) {
         line.push_str(" sh -c 'exec \"$@\"' sh");
     }
@@ -330,9 +331,18 @@ impl Stdin {
 
     /// Sends one chunk, or closes the input at its end. A read failure
     /// fails the command rather than delivering a truncated input as EOF.
+    ///
+    /// Cancel-safe, because the drive races it against output: capacity is
+    /// reserved before anything is read, and a read that is dropped
+    /// consumes nothing, so no chunk is ever read and then lost.
     async fn pump(&mut self) -> Result<(), Error> {
         let (Some(input), Some(sender)) = (self.input.as_mut(), self.sender.as_ref()) else {
             return future::pending().await;
+        };
+        let Ok(permit) = sender.clone().reserve_owned().await else {
+            // The call has ended; its outcome arrives on the response.
+            self.sender = None;
+            return Ok(());
         };
         let mut buffer = vec![0; STDIN_CHUNK];
         let read = input
@@ -353,10 +363,7 @@ impl Stdin {
             data: mem::take(&mut buffer),
             ..ExecChunk::default()
         };
-        if sender.send(chunk).await.is_err() {
-            // The call has ended; its outcome arrives on the response.
-            self.sender = None;
-        }
+        permit.send(chunk);
         Ok(())
     }
 }
@@ -407,5 +414,18 @@ mod tests {
             .expect("sh runs");
         // The program is looked up, not taken as an assignment.
         assert!(String::from_utf8_lossy(&output.stderr).contains("a=b"));
+    }
+
+    #[test]
+    fn a_program_or_variable_named_like_an_option_is_not_read_as_one() {
+        // Read as `env -i`, this would run nothing and succeed.
+        let argv = ["-i".to_owned()];
+        let status = Shell::new("sh")
+            .args(["-c", &line(&token(), "/", &BTreeMap::new(), &argv)])
+            .status()
+            .expect("sh runs");
+        assert_eq!(status.code(), Some(127));
+        let env = BTreeMap::from([("-i".to_owned(), "1".to_owned())]);
+        assert_eq!(through_sh(&env, &["printf", "ran"]), b"ran");
     }
 }

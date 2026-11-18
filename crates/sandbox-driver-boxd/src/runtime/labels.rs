@@ -25,9 +25,11 @@ const MANAGED_VALUE: &str = "1";
 /// Numbered chunks of the provider's metadata.
 const META_PREFIX: &str = "sandbox-driver/meta.";
 /// Caller labels that do not fit boxd's grammar: hex key, base64url value.
-const ENCODED_PREFIX: &str = "sdl/";
+/// The `k` keeps the stored key ending in a letter or digit, as boxd
+/// requires, even when the caller's key is empty.
+const ENCODED_PREFIX: &str = "sdl/k";
 /// Every key under these belongs to this provider or the platform.
-const RESERVED_PREFIXES: [&str; 3] = ["sandbox-driver/", ENCODED_PREFIX, "boxd/"];
+const RESERVED_PREFIXES: [&str; 3] = ["sandbox-driver/", "sdl/", "boxd/"];
 const MAX_KEY: usize = 63;
 const MAX_VALUE: usize = 256;
 const MAX_LABELS: usize = 64;
@@ -200,6 +202,32 @@ mod tests {
         assert!(stored.values().all(|value| native_value(value)));
         assert_eq!(caller_labels(&stored), caller);
         assert_eq!(super::meta(&stored), Some(meta()));
+    }
+
+    /// boxd's own key grammar, without this provider's reservations.
+    fn boxd_accepts(key: &str) -> bool {
+        let edge = |b: u8| b.is_ascii_lowercase() || b.is_ascii_digit();
+        let bytes = key.as_bytes();
+        (1..=MAX_KEY).contains(&bytes.len())
+            && bytes.first().copied().is_some_and(edge)
+            && bytes.last().copied().is_some_and(edge)
+            && bytes
+                .iter()
+                .all(|&b| edge(b) || matches!(b, b'.' | b'_' | b'/' | b'-'))
+            && !key.starts_with("boxd/")
+    }
+
+    #[test]
+    fn every_stored_key_is_one_boxd_accepts() {
+        let caller = BTreeMap::from([
+            (String::new(), "empty key".to_owned()),
+            ("UPPER".to_owned(), String::new()),
+            ("boxd/owner".to_owned(), "spoof".to_owned()),
+            ("k".repeat(29), "v".to_owned()),
+        ]);
+        let stored = encode(&caller, &meta()).unwrap();
+        assert!(stored.keys().all(|key| boxd_accepts(key)), "{stored:?}");
+        assert_eq!(caller_labels(&stored), caller);
     }
 
     #[test]

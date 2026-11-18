@@ -309,11 +309,24 @@ impl Service {
             .id()
             .and_then(|id| i32::try_from(id).ok())
             .unwrap_or(0);
-        let mut stdin = child.stdin.take();
+        // Input is written apart from the output loop, as a real agent
+        // does: a command that answers as it reads would otherwise block
+        // on full pipes in both directions.
+        let stdin = child.stdin.take();
+        let feeder = tokio::spawn(async move {
+            let mut stdin = stdin;
+            while let Ok(Some(chunk)) = inbound.message().await {
+                if let Some(input) = stdin.as_mut() {
+                    if input.write_all(&chunk.data).await.is_err() {
+                        stdin = None;
+                    }
+                }
+            }
+        });
         let mut stdout = child.stdout.take().expect("piped");
         let mut stderr = child.stderr.take().expect("piped");
         let (mut out, mut err) = (vec![0; 8192], vec![0; 8192]);
-        let (mut out_open, mut err_open, mut in_open) = (true, true, true);
+        let (mut out_open, mut err_open) = (true, true);
         let send = |data: Vec<u8>, is_stderr| ExecChunk {
             data,
             is_stderr,
@@ -322,18 +335,9 @@ impl Service {
         let exit = loop {
             tokio::select! {
                 () = replies.closed() => {
+                    feeder.abort();
                     kill(&[group]);
                     return;
-                }
-                message = inbound.message(), if in_open => {
-                    if let Ok(Some(chunk)) = message {
-                        if let Some(input) = stdin.as_mut() {
-                            let _ = input.write_all(&chunk.data).await;
-                        }
-                    } else {
-                        in_open = false;
-                        stdin = None;
-                    }
                 }
                 read = stdout.read(&mut out), if out_open => match read {
                     Ok(0) | Err(_) => out_open = false,
@@ -346,6 +350,7 @@ impl Service {
                 exit = child.wait(), if !out_open && !err_open => break exit,
             }
         };
+        feeder.abort();
         let stopped = {
             let mut state = state.lock().expect("state");
             match state.find(&machine) {

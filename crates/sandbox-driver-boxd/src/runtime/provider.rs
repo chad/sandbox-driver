@@ -921,6 +921,31 @@ mod tests {
         sandboxes.destroy(&sandbox.reference()).await.unwrap();
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn stdin_arrives_whole_while_the_command_answers_as_it_reads() {
+        let fake = FakeBoxd::start(Faults::default()).await;
+        let sandboxes = catalog(&fake, Some("bxd_good"), base());
+        let sandbox = sandboxes
+            .builder("cloud")
+            .await
+            .unwrap()
+            .create()
+            .await
+            .unwrap();
+        let input: Vec<u8> = (0..4_000_000_u32).map(|i| b'a' + (i % 26) as u8).collect();
+        let text = String::from_utf8(input.clone()).unwrap();
+        let (code, output) = time::timeout(
+            Duration::from_secs(60),
+            run(sandbox.as_ref(), &["cat"], Some(&input)),
+        )
+        .await
+        .expect("cat finishes");
+        assert_eq!(code, 0);
+        assert_eq!(output.len(), text.len(), "bytes lost on the way in");
+        assert!(output == text, "bytes reordered or changed");
+        sandboxes.destroy(&sandbox.reference()).await.unwrap();
+    }
+
     #[tokio::test]
     async fn a_failed_create_removes_its_machine_or_names_it() {
         let mut spec = base();
