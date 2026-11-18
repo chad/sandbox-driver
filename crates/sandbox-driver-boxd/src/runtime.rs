@@ -8,6 +8,8 @@ mod exec;
 mod fake;
 mod handle;
 mod labels;
+#[cfg(test)]
+mod live;
 mod provider;
 mod spec;
 
