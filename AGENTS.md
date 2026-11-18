@@ -25,8 +25,9 @@ Authoritative documents:
   it.
 
 The workspace is `crates/sandbox-driver` (core traits and types) plus
-`sandbox-driver-{conformance,host,docker,docker-config,daytona,daytona-config,protocol,cli}`.
-The Host, Docker, and Daytona packages each build a same-named executable.
+`sandbox-driver-{conformance,host,docker,docker-config,daytona,daytona-config,boxd,protocol,cli}`.
+The Host, Docker, and Daytona packages each build a same-named executable;
+boxd is a library only and has no protocol version 2 executable.
 There are no separate `*-plugin` packages.
 
 ## Rust style

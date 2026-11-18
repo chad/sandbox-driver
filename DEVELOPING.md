@@ -40,7 +40,7 @@ target/debug/lithos-sandbox provider health docker
 target/debug/lithos-sandbox run docker -- uname -a
 ```
 
-Host, Docker and Daytona are linked into the CLI; other providers are
+Host, Docker, Daytona and boxd are linked into the CLI; other providers are
 plugin entries in the catalog. See
 [the CLI guide](https://github.com/lithoscomputer/sandbox-driver/blob/main/docs/cli.md).
 
