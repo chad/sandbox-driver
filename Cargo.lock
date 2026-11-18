@@ -2288,6 +2288,7 @@ dependencies = [
  "async-trait",
  "clap",
  "sandbox-driver",
+ "sandbox-driver-boxd",
  "sandbox-driver-daytona",
  "sandbox-driver-docker",
  "sandbox-driver-host",
